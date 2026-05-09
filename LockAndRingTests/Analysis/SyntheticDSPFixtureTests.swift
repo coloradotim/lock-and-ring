@@ -28,7 +28,10 @@ final class SyntheticDSPFixtureTests: XCTestCase {
     func testGeneratedCloseClusterScoresRougherThanGeneratedOctave() {
         let roughnessScorer = RoughnessScorer()
         let octave = scoreRoughness(samples: generator.octave(), scorer: roughnessScorer)
-        let cluster = scoreRoughness(samples: generator.closeSemitoneCluster(), scorer: roughnessScorer)
+        let cluster = scoreRoughness(
+            samples: generator.closeSemitoneCluster(root: 440),
+            scorer: roughnessScorer
+        )
 
         XCTAssertGreaterThan(cluster.value, octave.value)
     }
