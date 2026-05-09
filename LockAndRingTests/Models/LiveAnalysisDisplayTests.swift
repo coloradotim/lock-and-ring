@@ -14,7 +14,7 @@ final class LiveAnalysisDisplayTests: XCTestCase {
 
         XCTAssertEqual(state.title, "Signal too quiet")
         XCTAssertFalse(state.isReliable)
-        XCTAssertTrue(state.message.contains("Results unreliable"))
+        XCTAssertTrue(state.message.contains("Analysis may be unreliable"))
     }
 
     func testMetricDisplayLabelsUseSingerFriendlyLanguage() {
@@ -98,7 +98,7 @@ final class LiveAnalysisDisplayTests: XCTestCase {
         XCTAssertFalse(summary.hasUsableChanges)
         XCTAssertEqual(
             summary.lowConfidenceMessage,
-            "Not enough usable signal to evaluate changes yet. Move closer or sing louder."
+            "Could not reliably evaluate recent changes because confidence was low. Move closer or sing a steadier take."
         )
     }
 

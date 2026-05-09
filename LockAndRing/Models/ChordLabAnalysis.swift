@@ -66,6 +66,7 @@ struct ChordLabAnalyzer {
                 bestLock: bestLock,
                 bestRing: bestRing
             ),
+            confidenceState: AnalysisConfidenceState(meters: MeterSnapshot.aggregate(from: frames.map(\.meters))),
             thresholds: thresholds
         )
     }
@@ -280,12 +281,14 @@ struct ChordLabAnalysis: Equatable, Sendable {
     let summary: ChordTimingSummary
     let timelineSegments: [ChordTimelineSegment]
     let eventMarkers: [ChordEventMarker]
+    let confidenceState: AnalysisConfidenceState
     let thresholds: ChordLabThresholds
 
     static let empty = ChordLabAnalysis(
         summary: .empty,
         timelineSegments: [],
         eventMarkers: [],
+        confidenceState: .unavailable(reason: .noAnalysis),
         thresholds: ChordLabThresholds()
     )
 }

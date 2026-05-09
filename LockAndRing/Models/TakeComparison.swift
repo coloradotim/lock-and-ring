@@ -152,6 +152,10 @@ struct TakeComparisonSummary: Equatable, Sendable {
     }
 
     var headline: String {
+        if let confidenceWarning {
+            return confidenceWarning
+        }
+
         let improvedCount = comparisons.filter(\.isImproved).count
         let regressedCount = comparisons.filter(\.isRegressed).count
 
@@ -168,6 +172,14 @@ struct TakeComparisonSummary: Equatable, Sendable {
 
     var comparisons: [MetricComparison] {
         [lock, roughness, ring, stabilityDuration]
+    }
+
+    var confidenceWarning: String? {
+        if min(takeA.averageConfidence, takeB.averageConfidence) < 0.55 {
+            return "Comparison may be unreliable because one take had low signal confidence."
+        }
+
+        return nil
     }
 }
 
