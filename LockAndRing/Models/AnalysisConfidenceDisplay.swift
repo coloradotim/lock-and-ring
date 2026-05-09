@@ -5,7 +5,10 @@ enum AnalysisConfidenceState: Equatable, Sendable {
     case lowConfidence(reason: ConfidenceReason)
     case unavailable(reason: UnavailableReason)
 
-    init(meters: MeterSnapshot, reliableThreshold: Double = 0.55) {
+    init(
+        meters: MeterSnapshot,
+        thresholds: ConfidenceThresholds = AnalysisConfiguration.default.confidence
+    ) {
         let signalQuality = meters.dominantSignalQuality
 
         if signalQuality == .unavailable {
@@ -18,7 +21,7 @@ enum AnalysisConfidenceState: Equatable, Sendable {
             return
         }
 
-        if meters.averageConfidence < reliableThreshold {
+        if meters.averageConfidence < thresholds.reliableAnalysis {
             self = .lowConfidence(reason: .insufficientAnalyzableAudio)
             return
         }
@@ -160,7 +163,10 @@ struct TakeAnalysisDisplayState: Equatable, Sendable {
     let warningMessage: String?
     let lockSummary: String
 
-    init(take: RecordedTake, lockThreshold: Double = 0.65) {
+    init(
+        take: RecordedTake,
+        thresholds: AnalysisConfiguration = .default
+    ) {
         guard !take.frames.isEmpty else {
             self.confidenceState = .unavailable(reason: .noAnalysis)
             self.warningMessage = AnalysisConfidenceDisplayState(state: confidenceState).message
@@ -169,7 +175,7 @@ struct TakeAnalysisDisplayState: Equatable, Sendable {
         }
 
         let meters = MeterSnapshot.aggregate(from: take.frames.map(\.meters))
-        let confidenceState = AnalysisConfidenceState(meters: meters)
+        let confidenceState = AnalysisConfidenceState(meters: meters, thresholds: thresholds.confidence)
         let bestLock = take.frames
             .map { frame in
                 (score: frame.meters.lock.score.value, time: frame.timestamp.timeIntervalSince(take.startedAt))
@@ -187,7 +193,7 @@ struct TakeAnalysisDisplayState: Equatable, Sendable {
             : AnalysisConfidenceDisplayState(state: confidenceState).message
 
         if confidenceState.isReliable {
-            self.lockSummary = (bestLock?.score ?? 0) >= lockThreshold
+            self.lockSummary = (bestLock?.score ?? 0) >= thresholds.chordTiming.lockScore
                 ? "This take locked. \(bestLockText)"
                 : "This take did not lock. \(bestLockText)"
         } else if case let .lowConfidence(reason) = confidenceState {
@@ -364,9 +370,10 @@ extension MeterSnapshot {
         let averageScore = metrics.map(\.score.value).averageValue
         let averageConfidence = metrics.map(\.confidence.value).averageValue
         let signalQuality = aggregateSignalQuality(from: metrics.map(\.signalQuality))
+        let thresholds = AnalysisConfiguration.default.confidence
         let lowConfidenceRatio = metrics
             .map(\.confidence.value)
-            .ratio { $0 < 0.55 }
+            .ratio { $0 < thresholds.aggregateLowConfidenceFrame }
         let clippingRatio = metrics
             .map(\.signalQuality)
             .ratio { $0 == .clipping }
@@ -397,12 +404,13 @@ extension MeterSnapshot {
         }
 
         let clippingRatio = states.ratio { $0 == .clipping }
-        if clippingRatio >= 0.1 {
+        let thresholds = AnalysisConfiguration.default.confidence
+        if clippingRatio >= thresholds.clippingFrameRatio {
             return .clipping
         }
 
         let problemStates = states.filter { $0 != .nominal && $0 != .unavailable }
-        guard Double(problemStates.count) / Double(states.count) >= 0.33 else {
+        guard Double(problemStates.count) / Double(states.count) >= thresholds.problemFrameRatio else {
             return .nominal
         }
 
