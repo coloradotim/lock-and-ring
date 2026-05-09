@@ -82,42 +82,15 @@ struct SignalQualityDisplayState: Equatable, Sendable {
     let isReliable: Bool
 
     init(meters: MeterSnapshot) {
-        let state = meters.ring.signalQuality
+        let confidenceState = AnalysisConfidenceState(meters: meters)
+        let state = meters.dominantSignalQuality
         let confidence = meters.averageConfidence
 
-        self.title = Self.title(for: state, confidence: confidence)
-        self.message = Self.message(for: state, confidence: confidence)
+        let confidenceDisplay = AnalysisConfidenceDisplayState(state: confidenceState)
+        self.title = confidenceState.isReliable ? "Good signal" : confidenceDisplay.title
+        self.message = confidenceDisplay.message
         self.confidence = confidence
-        self.isReliable = state == .nominal && confidence >= 0.55
-    }
-
-    private static func title(for state: SignalQualityState, confidence: Double) -> String {
-        if state == .nominal && confidence >= 0.55 {
-            return "Good signal"
-        }
-
-        return state.displayText
-    }
-
-    private static func message(for state: SignalQualityState, confidence: Double) -> String {
-        switch state {
-        case .nominal where confidence >= 0.55:
-            return "Results are reliable enough for rehearsal feedback."
-        case .lowSignal:
-            return "Results unreliable. Move closer or sing louder."
-        case .clipping:
-            return "Results unreliable. Reduce input level or move back."
-        case .noisy:
-            return "Results uncertain. Reduce room noise or move closer."
-        case .unstable:
-            return "Results uncertain. Wait for a steadier sung tone."
-        case .imbalanced:
-            return "Results uncertain. Check microphone placement."
-        case .unavailable:
-            return "No signal detected yet."
-        default:
-            return "Results have limited confidence."
-        }
+        self.isReliable = state == .nominal && confidenceState.isReliable
     }
 }
 
@@ -156,32 +129,21 @@ struct MetricDisplayState: Identifiable, Equatable, Sendable {
     }
 
     private static func confidenceOverride(for snapshot: MetricSnapshot) -> String? {
-        switch snapshot.signalQuality {
-        case .unavailable:
-            return "No analysis yet"
-        default:
-            break
-        }
-
-        if snapshot.confidence.value < 0.35 {
-            return "Low confidence"
-        }
-
-        switch snapshot.signalQuality {
-        case .nominal:
+        let state = AnalysisConfidenceState(
+            meters: MeterSnapshot(
+                lock: snapshot,
+                ring: snapshot,
+                roughness: snapshot,
+                stability: snapshot
+            )
+        )
+        switch state {
+        case .reliable:
             return nil
-        case .lowSignal:
-            return "Signal too quiet"
-        case .clipping:
-            return "Input clipping"
-        case .noisy:
-            return "Noisy input"
-        case .unstable:
-            return "Unstable signal"
-        case .imbalanced:
-            return "Check mic placement"
-        case .unavailable:
-            return "No analysis yet"
+        case let .lowConfidence(reason):
+            return reason.shortLabel
+        case let .unavailable(reason):
+            return reason.shortLabel
         }
     }
 }
@@ -252,7 +214,7 @@ struct TrendSummary: Equatable, Sendable {
     }
 
     var lowConfidenceMessage: String {
-        "Not enough usable signal to evaluate changes yet. Move closer or sing louder."
+        "Could not reliably evaluate recent changes because confidence was low. Move closer or sing a steadier take."
     }
 
     init(history: [MeterSnapshot]) {

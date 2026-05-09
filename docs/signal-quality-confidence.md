@@ -34,3 +34,14 @@ moderate ring score can remain high confidence when the signal is clean.
 The live meters show the primary signal-quality state, average confidence, and a
 per-metric confidence value. Low-confidence metrics are visually muted so poor
 input conditions do not look like authoritative feedback.
+
+User-facing Take Analysis copy should use the shared confidence display state:
+
+- reliable: present direct musical interpretation
+- low confidence: explain the uncertainty before showing any observed scores
+- unavailable: ask the user to record or import a take first
+
+Low-confidence wording should avoid hard claims such as "this take did not
+lock" or "no ring" unless the analysis is reliable enough to support them.
+Primary summaries should consolidate repeated metric warnings into one concise
+message. Debug and inspector views may still show raw scores.

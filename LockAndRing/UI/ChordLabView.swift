@@ -23,6 +23,11 @@ struct ChordLabView: View {
     private var content: some View {
         if let analysis, analysis.summary.soundOnsetTime != nil {
             VStack(alignment: .leading, spacing: 12) {
+                if let warning = ChordTimingDisplayState(analysis: analysis).warningMessage {
+                    Text(warning)
+                        .font(.caption)
+                        .foregroundStyle(.orange)
+                }
                 ChordLabSummaryGrid(summary: analysis.summary)
                 ChordTimelineView(analysis: analysis)
                 ChordLabMarkerList(markers: analysis.eventMarkers)

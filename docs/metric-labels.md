@@ -73,7 +73,8 @@ When confidence is low, the app should show a signal or confidence label instead
 | Unstable signal | Unstable signal |
 | Microphone or channel imbalance | Check mic placement |
 
-Scores remain available for debugging, but singer-facing feedback should defer to the confidence override.
+Scores remain available for debugging, but singer-facing feedback should defer to the confidence override. When
+confidence is low, summary copy should explain the uncertainty instead of making a hard musical claim.
 
 ## Validation Plan
 
