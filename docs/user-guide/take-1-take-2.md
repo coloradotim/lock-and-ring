@@ -13,6 +13,10 @@ Recommended workflow:
 5. Record or import another take.
 6. Compare the current take against the saved take, try again, or discard it.
 
+Saved takes are local-only for now. A saved take stores replayable audio,
+source type, duration, created date, confidence, and summary metadata so it can
+be reopened later from the Saved Takes list.
+
 When chord timing is available, it should appear as a Take Analysis section:
 consonant/onset duration, analyzable vowel start, time to lock, time to ring,
 best lock, and best ring. It is not a separate destination the singer needs to

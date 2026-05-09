@@ -20,3 +20,7 @@ Use Take Analysis as a coaching clue. For example, "Mostly aligned" or
 "Developing" should guide the next musical experiment, not become a score to
 chase. The main decision is what to do with the take after it exists: save,
 compare, try again, or discard.
+
+Saved recorded takes include replayable local audio and appear in the Saved
+Takes list on the Ready screen. From there they can be played, reopened for
+Take Analysis, renamed, deleted, or selected as a comparison reference.

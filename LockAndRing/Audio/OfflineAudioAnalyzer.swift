@@ -201,6 +201,18 @@ struct OfflineAudioClip: Equatable, Sendable {
     let monoSamples: [Float]
     let channelSamples: [[Float]]
 
+    init(
+        fileName: String,
+        sampleRate: Double,
+        monoSamples: [Float]? = nil,
+        channelSamples: [[Float]]
+    ) {
+        self.fileName = fileName
+        self.sampleRate = sampleRate
+        self.channelSamples = channelSamples
+        self.monoSamples = monoSamples ?? Self.downmixToMono(channelSamples)
+    }
+
     var duration: Double {
         Double(monoSamples.count) / sampleRate
     }
@@ -234,5 +246,26 @@ struct OfflineAudioClip: Equatable, Sendable {
         }
 
         return samples + Array(repeating: 0, count: frameSize - samples.count)
+    }
+
+    private static func downmixToMono(_ channels: [[Float]]) -> [Float] {
+        guard let firstChannel = channels.first else {
+            return []
+        }
+
+        guard channels.count > 1 else {
+            return firstChannel
+        }
+
+        return firstChannel.indices.map { index in
+            let sum = channels.reduce(Float(0)) { partialResult, channel in
+                guard index < channel.count else {
+                    return partialResult
+                }
+
+                return partialResult + channel[index]
+            }
+            return sum / Float(channels.count)
+        }
     }
 }

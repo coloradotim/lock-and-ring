@@ -84,6 +84,21 @@ struct ContentView: View {
             if let savedTake = viewModel.savedTake {
                 SavedTakeSummary(take: savedTake)
             }
+
+            if let message = viewModel.libraryErrorMessage {
+                Text(message)
+                    .font(.caption)
+                    .foregroundStyle(.orange)
+            }
+
+            SavedTakeLibraryView(
+                savedTakes: viewModel.savedTakes,
+                onPlay: viewModel.playSavedTake,
+                onAnalyze: viewModel.analyzeSavedTake,
+                onCompare: viewModel.useSavedTakeForComparison,
+                onRename: viewModel.renameSavedTake,
+                onDelete: viewModel.deleteSavedTake
+            )
         }
     }
 

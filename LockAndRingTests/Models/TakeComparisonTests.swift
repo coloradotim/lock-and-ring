@@ -19,6 +19,25 @@ final class TakeComparisonTests: XCTestCase {
         XCTAssertEqual(recorder.takeA?.duration, 3)
     }
 
+    func testRecorderStoresReplayableAudioForSelectedTake() {
+        let recorder = TakeRecorder()
+        let start = Date(timeIntervalSince1970: 10)
+
+        recorder.startRecording(slot: .takeA, now: start)
+        recorder.record(
+            frame(lock: 0.2, ring: 0.3, roughness: 0.7, stability: 0.8),
+            inputFrame: audioInputFrame(samples: [0, 0.1, 0.2])
+        )
+        recorder.record(
+            frame(lock: 0.4, ring: 0.5, roughness: 0.4, stability: 0.6),
+            inputFrame: audioInputFrame(samples: [0.1, 0, -0.1])
+        )
+        recorder.finishRecording(now: start.addingTimeInterval(3))
+
+        XCTAssertEqual(recorder.takeA?.audioClip?.sampleRate, 44_100)
+        XCTAssertEqual(recorder.takeA?.audioClip?.channelSamples.first?.count, 6)
+    }
+
     func testComparisonRequiresBothTakes() {
         let recorder = TakeRecorder()
         let start = Date(timeIntervalSince1970: 20)
@@ -133,6 +152,34 @@ final class TakeComparisonTests: XCTestCase {
             score: MetricScore(value: score),
             confidence: MetricConfidence(value: 1, reason: "fixture")
         )
+    }
+
+    private func audioInputFrame(samples: [Float]) -> AudioInputFrame {
+        guard let frame = AudioFrameNormalizer.makeFrame(
+            channels: [samples],
+            sampleRate: 44_100
+        ) else {
+            XCTFail("Expected fixture audio frame")
+            return AudioInputFrame(
+                hostTime: 0,
+                sampleRate: 44_100,
+                frameSize: 0,
+                channelCount: 0,
+                monoSamples: [],
+                channelSamples: [],
+                instrumentation: AudioInputInstrumentation(
+                    rmsLevel: 0,
+                    channelRMSLevels: [],
+                    isClipping: false,
+                    channelClipping: [],
+                    hasChannelImbalance: false,
+                    noiseFloor: 0,
+                    hasSignal: false
+                )
+            )
+        }
+
+        return frame
     }
 }
 
