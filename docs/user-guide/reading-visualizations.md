@@ -14,5 +14,9 @@ a log-scaled 25 Hz to 10 kHz horizontal frequency axis and a 0 dB to 70 dB
 vertical level axis. The spectrogram uses time on the horizontal axis and a
 linear 0 Hz to 10 kHz frequency axis.
 
+In Take Analysis, the Advanced Details scrubber controls the selected moment for
+both views. Moving the scrubber updates the spectrum to the nearest analyzed
+frame and draws a vertical cursor on the spectrogram at the same time.
+
 Use visual detail when you want to inspect why a metric might have changed.
 Use Signal Status and What Just Happened during active singing.

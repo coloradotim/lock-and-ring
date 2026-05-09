@@ -160,7 +160,7 @@ struct TakeAnalysisDisplayState: Equatable, Sendable {
     let warningMessage: String?
     let lockSummary: String
 
-    init(take: RecordedTake, lockThreshold: Double = 0.75) {
+    init(take: RecordedTake, lockThreshold: Double = 0.65) {
         guard !take.frames.isEmpty else {
             self.confidenceState = .unavailable(reason: .noAnalysis)
             self.warningMessage = AnalysisConfidenceDisplayState(state: confidenceState).message
@@ -216,6 +216,8 @@ struct ChordTimingDisplayState: Equatable, Sendable {
                 self.lockSummary = Self.lockAndRingSummary(summary: analysis.summary)
             } else if analysis.summary.didLock {
                 self.lockSummary = Self.lockWithoutRingSummary(summary: analysis.summary)
+            } else if Self.hasStrongMoment(summary: analysis.summary, thresholds: analysis.thresholds) {
+                self.lockSummary = Self.strongMomentSummary(summary: analysis.summary)
             } else {
                 self.lockSummary = Self.bestLockText(prefix: "This chord did not lock.", summary: analysis.summary)
             }
@@ -243,6 +245,21 @@ struct ChordTimingDisplayState: Equatable, Sendable {
         let delayText = delayText(summary: summary)
 
         return "This chord \(lockText), but did not develop strong ring. \(bestRing)\(delayText)"
+    }
+
+    private static func strongMomentSummary(summary: ChordTimingSummary) -> String {
+        let bestLock = peakText(label: "Best lock", score: summary.bestLockScore, time: summary.bestLockTime)
+        let bestRing = peakText(label: "Best ring", score: summary.bestRingScore, time: summary.bestRingTime)
+
+        return "This chord had lock or ring moments, but they were not sustained long enough. \(bestLock) \(bestRing)"
+    }
+
+    private static func hasStrongMoment(
+        summary: ChordTimingSummary,
+        thresholds: ChordLabThresholds
+    ) -> Bool {
+        (summary.bestLockScore ?? 0) >= thresholds.lockScore
+            || (summary.bestRingScore ?? 0) >= thresholds.ringScore
     }
 
     private static func bestLockText(prefix: String, summary: ChordTimingSummary) -> String {

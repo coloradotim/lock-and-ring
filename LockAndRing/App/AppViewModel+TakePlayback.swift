@@ -23,11 +23,14 @@ extension AppViewModel {
     }
 
     func scrubCurrentTakePlayback(to progress: Double) {
+        let clampedProgress = min(max(progress, 0), 1)
+
         guard let currentTakePlayer else {
+            currentTakePlayback.currentTime = clampedProgress * currentTakePlayback.duration
             return
         }
 
-        currentTakePlayer.currentTime = min(max(progress, 0), 1) * currentTakePlayer.duration
+        currentTakePlayer.currentTime = clampedProgress * currentTakePlayer.duration
         currentTakePlayback.currentTime = currentTakePlayer.currentTime
     }
 

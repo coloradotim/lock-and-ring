@@ -65,7 +65,10 @@ The MVP uses provisional confidence-aware thresholds:
 - ring requires high ring score, enough ring confidence, and acceptable roughness
 - lock and ring must hold for a short sustained duration before being reported as achieved
 
-These rules are intentionally explainable and easy to calibrate. They are not final consonant or vowel classifiers.
+These rules are intentionally explainable and easy to calibrate. The thresholds are tuned so strong real quartet audio
+can register lock and ring in analyzable vowel regions, not only synthetic ideal tones. If a take has strong lock or ring
+moments that are too brief to satisfy the sustained-duration rule, Take Analysis should describe them as short moments
+rather than saying the chord never locked or rang. These are not final consonant or vowel classifiers.
 
 ## Caveats
 

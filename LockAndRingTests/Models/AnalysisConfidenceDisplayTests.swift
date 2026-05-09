@@ -141,12 +141,33 @@ final class AnalysisConfidenceDisplayTests: XCTestCase {
     func testChordTimingSummaryNamesNoLockWithBestAttempt() {
         let state = ChordTimingDisplayState(
             analysis: chordAnalysis(
-                summary: chordSummary(timeFromVowelToLock: nil, timeFromVowelToRing: nil)
+                summary: chordSummary(
+                    timeFromVowelToLock: nil,
+                    timeFromVowelToRing: nil,
+                    bestLockScore: 0.55,
+                    bestRingScore: 0.32
+                )
             )
         )
 
         XCTAssertTrue(state.lockSummary.contains("This chord did not lock"))
-        XCTAssertTrue(state.lockSummary.contains("Best lock: 66% at 0.44s"))
+        XCTAssertTrue(state.lockSummary.contains("Best lock: 55% at 0.44s"))
+    }
+
+    func testChordTimingSummaryDoesNotDenyStrongShortMoments() {
+        let state = ChordTimingDisplayState(
+            analysis: chordAnalysis(
+                summary: chordSummary(
+                    timeFromVowelToLock: nil,
+                    timeFromVowelToRing: nil,
+                    bestLockScore: 0.7,
+                    bestRingScore: 0.5
+                )
+            )
+        )
+
+        XCTAssertTrue(state.lockSummary.contains("had lock or ring moments"))
+        XCTAssertFalse(state.lockSummary.contains("This chord did not lock"))
     }
 
     func testPhraseSegmentationReportsUncertaintyForInsufficientAudio() {
@@ -174,6 +195,7 @@ final class AnalysisConfidenceDisplayTests: XCTestCase {
     private func chordSummary(
         timeFromVowelToLock: TimeInterval?,
         timeFromVowelToRing: TimeInterval?,
+        bestLockScore: Double? = 0.66,
         bestRingScore: Double? = 0.58,
         bestRingTime: TimeInterval? = 0.55,
         largestDelayContributor: ChordDelayContributor = .lock
@@ -185,7 +207,7 @@ final class AnalysisConfidenceDisplayTests: XCTestCase {
             timeFromVowelToStability: 0.16,
             timeFromVowelToLock: timeFromVowelToLock,
             timeFromVowelToRing: timeFromVowelToRing,
-            bestLockScore: 0.66,
+            bestLockScore: bestLockScore,
             bestLockTime: 0.44,
             bestRingScore: bestRingScore,
             bestRingTime: bestRingTime,

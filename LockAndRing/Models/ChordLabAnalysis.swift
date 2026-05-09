@@ -530,14 +530,14 @@ struct ChordLabThresholds: Equatable, Sendable {
     init(
         soundOnsetConfidence: Double = 0.15,
         analyzableConfidence: Double = 0.35,
-        minimumMetricConfidence: Double = 0.55,
+        minimumMetricConfidence: Double = 0.45,
         minimumSustainedDuration: TimeInterval = 0.15,
         stabilityScore: Double = 0.5,
-        minimumStabilityForLock: Double = 0.5,
-        lockScore: Double = 0.75,
-        ringScore: Double = 0.6,
-        maximumRoughnessForLock: Double = 0.5,
-        maximumRoughnessForRing: Double = 0.5
+        minimumStabilityForLock: Double = 0.4,
+        lockScore: Double = 0.65,
+        ringScore: Double = 0.45,
+        maximumRoughnessForLock: Double = 0.65,
+        maximumRoughnessForRing: Double = 0.7
     ) {
         self.soundOnsetConfidence = soundOnsetConfidence
         self.analyzableConfidence = analyzableConfidence
