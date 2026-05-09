@@ -133,6 +133,21 @@ final class TakeComparisonTests: XCTestCase {
         XCTAssertEqual(frozenFrame.timestamp, take.endedAt)
     }
 
+    func testRecordedTakeFindsNearestFrameForScrubTime() {
+        let take = take(
+            slot: .takeA,
+            duration: 2,
+            frames: [
+                frame(time: 0, lock: 0.2, ring: 0.2, roughness: 0.2, stability: 0.2),
+                frame(time: 0.9, lock: 0.6, ring: 0.6, roughness: 0.2, stability: 0.6),
+                frame(time: 1.8, lock: 0.9, ring: 0.9, roughness: 0.2, stability: 0.9)
+            ]
+        )
+
+        XCTAssertEqual(take.frame(at: 1.0)?.meters.lock.score.value, 0.6)
+        XCTAssertEqual(take.frame(at: 2.0)?.meters.lock.score.value, 0.9)
+    }
+
     func testPlaybackStateReportsProgress() {
         let state = TakePlaybackState(
             duration: 10,
@@ -161,12 +176,13 @@ final class TakeComparisonTests: XCTestCase {
     }
 
     private func frame(
+        time: TimeInterval? = nil,
         lock: Double,
         ring: Double,
         roughness: Double,
         stability: Double
     ) -> AnalysisFrame {
-        AnalysisFrame.placeholder.replacingMeters(
+        let frame = AnalysisFrame.placeholder.replacingMeters(
             MeterSnapshot(
                 lock: snapshot(kind: .lock, score: lock),
                 ring: snapshot(kind: .ring, score: ring),
@@ -174,6 +190,12 @@ final class TakeComparisonTests: XCTestCase {
                 stability: snapshot(kind: .stability, score: stability)
             )
         )
+
+        guard let time else {
+            return frame
+        }
+
+        return frame.replacingTimestamp(Date(timeIntervalSince1970: 100 + time))
     }
 
     private func snapshot(kind: MetricKind, score: Double) -> MetricSnapshot {
@@ -215,6 +237,16 @@ final class TakeComparisonTests: XCTestCase {
 
 private extension AnalysisFrame {
     func replacingMeters(_ meters: MeterSnapshot) -> AnalysisFrame {
+        AnalysisFrame(
+            timestamp: timestamp,
+            meters: meters,
+            spectrum: spectrum,
+            spectrogram: spectrogram,
+            ringHistory: ringHistory
+        )
+    }
+
+    func replacingTimestamp(_ timestamp: Date) -> AnalysisFrame {
         AnalysisFrame(
             timestamp: timestamp,
             meters: meters,

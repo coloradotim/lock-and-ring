@@ -84,6 +84,7 @@ final class AppViewModel {
     func stopTakeRecording() {
         takeRecorder.finishRecording()
         replaceCurrentTake(takeRecorder.take(for: .takeA))
+        inputManager.stop()
         workflowState = currentTake == nil ? .ready : .reviewingTake
     }
 

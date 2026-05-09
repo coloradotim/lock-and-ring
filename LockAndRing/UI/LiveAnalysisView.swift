@@ -284,6 +284,8 @@ struct SpectrumPanel: View {
     let spectrumTitle: String
     let spectrogramTitle: String
     let duration: Double?
+    let scrubTime: Double?
+    let onScrub: ((Double) -> Void)?
     var isCompact = false
     @Binding var isExpanded: Bool
 
@@ -294,6 +296,8 @@ struct SpectrumPanel: View {
         spectrumTitle: String = "Live Spectrum",
         spectrogramTitle: String = "Live Spectrogram",
         duration: Double? = nil,
+        scrubTime: Double? = nil,
+        onScrub: ((Double) -> Void)? = nil,
         isCompact: Bool = false,
         isExpanded: Binding<Bool> = .constant(false)
     ) {
@@ -303,6 +307,8 @@ struct SpectrumPanel: View {
         self.spectrumTitle = spectrumTitle
         self.spectrogramTitle = spectrogramTitle
         self.duration = duration
+        self.scrubTime = scrubTime
+        self.onScrub = onScrub
         self.isCompact = isCompact
         _isExpanded = isExpanded
     }
@@ -328,16 +334,58 @@ struct SpectrumPanel: View {
     private var sharedVisualDetail: some View {
         ScrollView(.horizontal) {
             VStack(alignment: .leading, spacing: 14) {
+                if let duration, let scrubTime, let onScrub {
+                    visualScrubber(duration: duration, scrubTime: scrubTime, onScrub: onScrub)
+                }
+
                 SpectrumView(title: spectrumTitle, spectrum: spectrum)
                 SpectrogramView(
                     title: spectrogramTitle,
                     spectrogram: spectrogram,
-                    duration: duration
+                    duration: duration,
+                    cursorProgress: scrubProgress
                 )
             }
             .frame(minWidth: 920)
             .padding(.top, 8)
         }
+    }
+
+    private var scrubProgress: Double? {
+        guard let duration, let scrubTime, duration > 0 else {
+            return nil
+        }
+
+        return min(max(scrubTime / duration, 0), 1)
+    }
+
+    private func visualScrubber(
+        duration: Double,
+        scrubTime: Double,
+        onScrub: @escaping (Double) -> Void
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack {
+                Text("Selected moment")
+                    .font(.caption.weight(.semibold))
+                Spacer()
+                Text("\(formatVisualTime(scrubTime)) / \(formatVisualTime(duration))")
+                    .font(.caption.monospacedDigit())
+                    .foregroundStyle(.secondary)
+            }
+
+            Slider(
+                value: Binding(
+                    get: { scrubProgress ?? 0 },
+                    set: onScrub
+                ),
+                in: 0...1
+            )
+        }
+    }
+
+    private func formatVisualTime(_ time: Double) -> String {
+        time.formatted(.number.precision(.fractionLength(2))) + "s"
     }
 
     private var spectrumHelpText: String {

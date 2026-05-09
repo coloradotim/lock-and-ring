@@ -27,6 +27,7 @@ final class MainWorkflowStateTests: XCTestCase {
         let readiness = RecordingReadiness(inputState: .requestingPermission, hasKnownInput: true)
 
         XCTAssertFalse(readiness.isAvailable)
+        XCTAssertTrue(readiness.canAttemptRecording)
         XCTAssertEqual(readiness.statusMessage, "Preparing microphone...")
     }
 
@@ -34,6 +35,7 @@ final class MainWorkflowStateTests: XCTestCase {
         let readiness = RecordingReadiness(inputState: .permissionDenied, hasKnownInput: true)
 
         XCTAssertFalse(readiness.isAvailable)
+        XCTAssertFalse(readiness.canAttemptRecording)
         XCTAssertEqual(
             readiness.statusMessage,
             "Record Take unavailable until microphone permission is granted."
@@ -44,6 +46,7 @@ final class MainWorkflowStateTests: XCTestCase {
         let readiness = RecordingReadiness(inputState: .running, hasKnownInput: true)
 
         XCTAssertTrue(readiness.isAvailable)
+        XCTAssertTrue(readiness.canAttemptRecording)
         XCTAssertNil(readiness.statusMessage)
     }
 }

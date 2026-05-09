@@ -4,6 +4,7 @@ struct SpectrogramView: View {
     var title = "Spectrogram"
     let spectrogram: SpectrogramSnapshot
     var duration: Double?
+    var cursorProgress: Double?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -32,6 +33,7 @@ struct SpectrogramView: View {
 
                     Canvas { context, size in
                         drawSpectrogram(context: context, size: size)
+                        drawCursor(context: context, size: size)
                     }
                     .frame(height: 180)
                     .background(.black.opacity(0.72), in: RoundedRectangle(cornerRadius: 8))
@@ -89,6 +91,18 @@ struct SpectrogramView: View {
                 )
             }
         }
+    }
+
+    private func drawCursor(context: GraphicsContext, size: CGSize) {
+        guard let cursorProgress else {
+            return
+        }
+
+        let xPosition = size.width * min(max(cursorProgress, 0), 1)
+        var path = Path()
+        path.move(to: CGPoint(x: xPosition, y: 0))
+        path.addLine(to: CGPoint(x: xPosition, y: size.height))
+        context.stroke(path, with: .color(.white.opacity(0.9)), lineWidth: 2)
     }
 
     private func color(for magnitude: Double) -> Color {

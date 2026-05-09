@@ -29,6 +29,15 @@ enum RecordingReadiness: Equatable, Sendable {
         self == .available
     }
 
+    var canAttemptRecording: Bool {
+        switch self {
+        case .available, .unknown:
+            true
+        case .unavailable:
+            false
+        }
+    }
+
     var statusMessage: String? {
         switch self {
         case .available:

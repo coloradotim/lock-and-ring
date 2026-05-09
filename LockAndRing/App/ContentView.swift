@@ -80,7 +80,7 @@ struct ContentView: View {
                 }
                 .keyboardShortcut(.space, modifiers: [])
                 .buttonStyle(.borderedProminent)
-                .disabled(!recordingReadiness.isAvailable)
+                .disabled(!recordingReadiness.canAttemptRecording)
                 .help(recordingReadiness.statusMessage ?? "Record a take from the selected microphone.")
 
                 Button {

@@ -23,6 +23,8 @@ struct TakeReviewDashboard: View {
         let takeState = TakeAnalysisDisplayState(take: take)
         let chordAnalysis = ChordLabAnalyzer().analyze(frames: take.frames)
         let phraseState = PhraseSegmentationDisplayState(regionStates: [takeState.confidenceState])
+        let reviewFrame = take.frame(at: playback.currentTime) ?? frame
+        let reviewDuration = playback.duration > 0 ? playback.duration : take.duration
 
         VStack(alignment: .leading, spacing: 16) {
             LazyVGrid(columns: dashboardColumns, alignment: .leading, spacing: 16) {
@@ -52,11 +54,13 @@ struct TakeReviewDashboard: View {
 
             SpectrumPanel(
                 title: "Advanced Details",
-                spectrum: frame.spectrum,
+                spectrum: reviewFrame.spectrum,
                 spectrogram: frame.spectrogram,
                 spectrumTitle: "Recorded Take Spectrum",
                 spectrogramTitle: "Recorded Take Spectrogram",
-                duration: take.duration,
+                duration: reviewDuration,
+                scrubTime: playback.currentTime,
+                onScrub: onPlaybackScrub,
                 isCompact: true,
                 isExpanded: $isVisualEvidenceExpanded
             )

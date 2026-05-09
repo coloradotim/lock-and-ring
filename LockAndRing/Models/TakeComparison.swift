@@ -88,6 +88,20 @@ struct RecordedTake: Identifiable, Equatable, Sendable {
             ringHistory: lastFrame.ringHistory
         )
     }
+
+    func frame(at time: TimeInterval) -> AnalysisFrame? {
+        guard !frames.isEmpty else {
+            return nil
+        }
+
+        let clampedTime = min(max(time, 0), duration)
+        return frames.min { left, right in
+            let leftOffset = left.timestamp.timeIntervalSince(startedAt)
+            let rightOffset = right.timestamp.timeIntervalSince(startedAt)
+
+            return abs(leftOffset - clampedTime) < abs(rightOffset - clampedTime)
+        }
+    }
 }
 
 struct TakeSummary: Equatable, Sendable {
