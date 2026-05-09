@@ -37,7 +37,7 @@ final class AudioInputManager: AudioInputManaging {
 
     init(
         bufferSize: AVAudioFrameCount = 1_024,
-        preferenceStore: AudioInputDevicePreferenceStoring = UserDefaultsAudioInputDevicePreferenceStore()
+        preferenceStore: AudioInputDevicePreferenceStoring = UserDefaultsAudioInputStore()
     ) {
         self.bufferSize = bufferSize
         self.preferenceStore = preferenceStore
@@ -275,7 +275,7 @@ protocol AudioInputDevicePreferenceStoring {
     func save(_ preference: AudioInputDevicePreference)
 }
 
-struct UserDefaultsAudioInputDevicePreferenceStore: AudioInputDevicePreferenceStoring {
+struct UserDefaultsAudioInputStore: AudioInputDevicePreferenceStoring {
     private let key = "LockAndRing.AudioInputDevicePreference"
     private let userDefaults: UserDefaults
 
