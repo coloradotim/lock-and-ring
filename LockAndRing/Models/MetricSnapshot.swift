@@ -62,6 +62,26 @@ enum SignalQualityState: Equatable, Sendable {
     case lowSignal
     case clipping
     case noisy
+    case unstable
     case imbalanced
     case unavailable
+
+    var displayText: String {
+        switch self {
+        case .nominal:
+            "Stable analysis"
+        case .lowSignal:
+            "Signal too quiet"
+        case .clipping:
+            "Input clipping"
+        case .noisy:
+            "Excessive background noise"
+        case .unstable:
+            "Low confidence"
+        case .imbalanced:
+            "Channel imbalance"
+        case .unavailable:
+            "No analysis yet"
+        }
+    }
 }
