@@ -1,17 +1,22 @@
-# Take 1 / Take 2
+# Take Analysis and Comparison
 
-Take 1 / Take 2 answers: did Take 2 improve compared to Take 1?
+Take Analysis answers: what happened in this take, and what should we do next?
+Comparison answers: did one take improve compared to another?
 
 Recommended workflow:
 
-1. Record Take 1 as the baseline.
-2. Make one musical adjustment.
-3. Record Take 2.
-4. Read the headline and metric deltas.
+1. Record or import a take.
+2. Review Take Analysis: signal quality, Lock, Ring, Roughness, Stability,
+   timing, and visual evidence.
+3. Save the take, compare it, try again, or discard it.
+4. Make one musical adjustment.
+5. Record or import another take.
+6. Compare the takes.
 
-After recording a short sustained chord, open **Analyze Chord** on that take to
-see Chord Lab timing: consonant/onset duration, analyzable vowel start, time to
-lock, time to ring, best lock, and best ring.
+When chord timing is available, it should appear as a Take Analysis section:
+consonant/onset duration, analyzable vowel start, time to lock, time to ring,
+best lock, and best ring. It is not a separate destination the singer needs to
+choose before recording.
 
 The comparison language treats lower Roughness as a musical improvement, even
 though the raw roughness score decreases. Higher Lock, Ring, and Stability are

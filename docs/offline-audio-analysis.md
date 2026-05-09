@@ -2,8 +2,9 @@
 
 ## Purpose
 
-Offline analysis lets the app run prerecorded clips through the same FFT and scoring path as live microphone input. This
-supports repeatable algorithm checks, real quartet recording review, and debugging without needing a live rehearsal.
+Offline analysis lets the app treat prerecorded audio as an imported take and run it through the same FFT and scoring
+path as microphone-recorded takes. This supports repeatable algorithm checks, real quartet recording review, and
+debugging without needing a live rehearsal.
 
 ## Supported Input
 
@@ -41,6 +42,6 @@ audio.
 
 - Analysis playback does not yet play audible sound through the speakers.
 - Very long files are loaded into memory at once.
-- Imported clips are not saved as sessions.
+- Imported clips are not yet saved as persisted takes or sessions.
 - Metrics are not exported.
-- Take comparison remains a later MVP workflow.
+- Imported-take comparison is still being folded into the unified Take Analysis workflow.

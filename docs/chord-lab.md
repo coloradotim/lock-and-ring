@@ -1,19 +1,18 @@
-# Chord Lab
+# Chord Timing
 
-Chord Lab is the first single-chord timing workflow. It analyzes a recorded chord event and asks how quickly the sound
-got through onset, became analyzable, locked, and developed ring.
+Chord timing is a Take Analysis capability for sustained chord events. It asks how quickly the sound got through onset,
+became analyzable, locked, and developed ring.
 
 ## MVP Scope
 
-The MVP works on one sustained chord from an existing analyzed frame sequence, such as a recorded take. It does not
-try to analyze a full phrase, identify the chord name, read notation, or assign blame to individual singers.
+The MVP works on one sustained chord from an existing analyzed frame sequence, such as a recorded or imported take. It
+does not try to analyze a full phrase, identify the chord name, read notation, or assign blame to individual singers.
 
-The first user-facing access point is the Take 1 / Take 2 workflow. After a take is recorded, open **Analyze Chord** to
-see its Chord Lab summary and timeline.
+This should be presented as a section inside Take Analysis, not as a separate user-facing lab or destination.
 
 ## Timing Summary
 
-Chord Lab reports:
+Chord timing reports:
 
 - sound onset time
 - analyzable vowel start time
@@ -59,7 +58,7 @@ These rules are intentionally explainable and easy to calibrate. They are not fi
 
 ## Caveats
 
-Consonant time is visible, but it is not automatically bad. Good barbershop still needs clear consonants; Chord Lab
+Consonant time is visible, but it is not automatically bad. Good barbershop still needs clear consonants; chord timing
 helps show whether onset, tuning/searching, lock, or ring development consumed the most time.
 
 The analysis is ensemble-level and single-microphone. It should guide rehearsal experiments, not produce

@@ -1,8 +1,8 @@
 # Take Comparison Workflow
 
-Issue #10 introduces a two-take rehearsal loop for short before/after comparisons.
-The workflow stays snapshot-based so it can work with live microphone frames or
-offline playback frames without coupling future rehearsal sessions to audio files.
+Take comparison is an action inside the broader Take Analysis workflow. The
+workflow stays snapshot-based so it can work with microphone-recorded takes or
+imported takes without coupling future rehearsal sessions to one capture source.
 
 ## Current behavior
 
@@ -15,9 +15,9 @@ offline playback frames without coupling future rehearsal sessions to audio file
 - Stability duration estimates the share of take duration whose stability score
   is at least 65%.
 
-## Future session shape
+## Future take-analysis shape
 
 The `RecordedTake` model keeps the slot, label, timestamps, and immutable frames
 separate from `TakeRecorder`, so broader rehearsal sessions can later group many
-takes, add singer notes, or persist take bundles without changing the scoring
-contract.
+takes, add singer notes, persist take bundles, or compare imported takes without
+changing the scoring contract.

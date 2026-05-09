@@ -6,13 +6,13 @@ Accepted
 
 ## Context
 
-The app supports both live microphone feedback and offline imported audio.
+The app supports both microphone-recorded takes and imported audio takes.
 Maintaining separate scoring paths for those sources would make results hard to
-compare and would increase the chance of drift between rehearsal and review
-modes.
+compare and would increase the chance of drift between capture sources.
 
-Take comparison also depends on stored analysis snapshots being comparable
-regardless of whether they came from the microphone or imported audio playback.
+Take Analysis and comparison also depend on stored analysis snapshots being
+comparable regardless of whether they came from the microphone or imported audio
+playback.
 
 ## Decision
 

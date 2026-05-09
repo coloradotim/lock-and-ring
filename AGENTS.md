@@ -2,7 +2,9 @@
 
 ## Project identity
 
-Lock & Ring is a Mac-native rehearsal and analysis tool for barbershop quartets and vocal ensembles. The first product goal is not to identify and correct every individual singer. The first goal is to analyze the combined sound from a single microphone and give useful real-time feedback on:
+Lock & Ring is a Mac-native take-based rehearsal and analysis tool for barbershop quartets and vocal ensembles. The first product goal is not to identify and correct every individual singer. The first goal is to help singers record or import a take, review ensemble-level Take Analysis, and decide whether to save, compare, try again, or discard that take.
+
+Take Analysis uses the combined sound from a single microphone or imported audio and gives useful feedback on:
 
 - **Lock**: pitch stability and alignment around simple harmonic relationships.
 - **Ring**: reinforced upper partial energy that appears when the chord becomes more organized.
@@ -10,6 +12,24 @@ Lock & Ring is a Mac-native rehearsal and analysis tool for barbershop quartets 
 - **Stability**: whether the sound stays organized over time.
 
 This is a musical tool first and a signal-processing sandbox second. Avoid building an academic toy that cannot help a quartet rehearse.
+
+## Product model
+
+The primary product object is a **take**.
+
+User-facing workflows should generally follow:
+
+```text
+Ready -> Record or Import Take -> Take Analysis -> Save / Compare / Try Again / Discard
+```
+
+Imported audio should be treated as a take, not as a separate product experience. Chord timing, phrase segmentation,
+timeline visualizations, scoring inspection, and comparison should surface as sections or actions inside Take Analysis
+unless a later product decision explicitly changes this.
+
+Avoid introducing new top-level user-facing destinations such as "Chord Lab" or "Phrase Lab" when the same capability
+can be presented as part of Take Analysis. Internal model names may still describe analysis modules, but the singer's
+mental model should stay take-first.
 
 ## Operating principles
 
@@ -23,10 +43,10 @@ This is a musical tool first and a signal-processing sandbox second. Avoid build
    - First measure the quality of the combined sound: harmonic organization, roughness, overtone reinforcement, and temporal stability.
    - Chord/root selection may be added later to improve interpretation, but the app should provide useful feedback even when it does not know the chord name.
 
-3. **Real-time, low-friction rehearsal use**
-   - The app should open quickly, use the default or selected mic, and show feedback immediately.
+3. **Low-friction take capture**
+   - The app should open quickly, use the default or selected mic, and make recording or importing a take obvious.
    - The UI should be usable by singers in rehearsal, not just by developers.
-   - Favor clear meters and visual comparisons over dense technical displays.
+   - Favor clear Take Analysis sections and visual comparisons over dense technical displays.
 
 4. **Scientific humility**
    - Treat “ring” as an observable proxy, not a magical truth meter.
@@ -111,7 +131,7 @@ Avoid overclaiming:
 - Keep PRs reviewable.
 - Before merging, run available tests and document manual test notes.
 - If a change affects app behavior, include a short “How I tested this” section in the PR.
-- When a PR changes user-visible behavior, scoring semantics, metric labels, mode layout,
+- When a PR changes user-visible behavior, scoring semantics, metric labels, workflow layout,
   signal-quality behavior, or analysis output, update the relevant user-facing or technical
   docs in the same PR.
 

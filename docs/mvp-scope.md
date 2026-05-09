@@ -5,11 +5,32 @@
 Lock & Ring helps a quartet or vocal ensemble answer one rehearsal question:
 
 ```text
-Did the ensemble sound become more locked, less rough, more stable, and more ring-forward after an adjustment?
+Did this take become more locked, less rough, more stable, and more ring-forward after an adjustment?
 ```
 
-The MVP is not an automatic vocal coach and not a generic spectrum-analysis lab. It is a single-microphone rehearsal
-comparison tool for sustained ensemble sounds.
+The MVP is not an automatic vocal coach and not a generic spectrum-analysis lab. It is a take-based,
+single-microphone rehearsal analysis tool.
+
+## Core Workflow
+
+The long-term product model is:
+
+```text
+Ready -> Record or Import Take -> Analyze Take -> Save / Compare / Try Again / Discard
+```
+
+The primary object is a **take**. A take can be recorded through the microphone or imported from an audio file. Once the
+take exists, the app should show **Take Analysis** rather than sending the user into separate mode-first destinations.
+
+Take Analysis should include or eventually include:
+
+- overall summary
+- signal quality and confidence
+- Lock, Ring, Roughness, and Stability
+- timing / chord behavior
+- phrase segmentation
+- timeline and visual evidence
+- comparison to another take
 
 ## Target User
 
@@ -19,6 +40,7 @@ rehearsal room.
 They need:
 
 - quick setup with the built-in or an external microphone
+- an obvious path to record or import a take
 - feedback that is readable from a few feet away
 - a way to compare two short attempts
 - language that supports musical decisions instead of technical rabbit holes
@@ -30,13 +52,12 @@ They do not need a studio workflow, accounts, collaboration features, or singer-
 1. Open Lock & Ring.
 2. Select or confirm the microphone.
 3. Check that the input level is healthy and not clipping.
-4. Sing a sustained chord or short target passage.
-5. Watch live Lock, Ring, Roughness, and Stability feedback.
-6. Record a short Take A.
-7. Make one musical adjustment, such as vowel alignment, interval tuning, balance, or breath timing.
-8. Record a short Take B.
-9. Compare Take A and Take B.
-10. Decide whether the adjustment helped.
+4. Record or import a short take.
+5. Review Take Analysis.
+6. Make one musical adjustment, such as vowel alignment, interval tuning, balance, or breath timing.
+7. Record or import another take.
+8. Compare takes.
+9. Save, try again, or discard.
 
 The first comparison should emphasize direction, not judgment. Useful answers sound like:
 
@@ -44,45 +65,83 @@ The first comparison should emphasize direction, not judgment. Useful answers so
 - Ring increased.
 - Stability improved.
 - The second take looked less confident because the signal clipped.
+- Chord timing showed ring arrived later than lock.
 
-## Core Screens
+## Take Analysis Sections
 
-### Live Monitor
+### Capture / Import
 
-Purpose: confirm that the app is listening and give immediate ensemble feedback.
-
-Must show:
-
-- selected input device
-- input level and clipping state
-- mono/stereo status
-- Lock, Ring, Roughness, and Stability meters
-- spectrum or spectrogram context
-- signal confidence or quality warning when available
-
-### Take Recorder
-
-Purpose: capture short rehearsal attempts for comparison.
+Purpose: create the take.
 
 Must support:
 
-- recording a short Take A
-- recording a short Take B
-- labeling the takes with timestamp and duration
-- showing whether the take had signal, clipping, or low-confidence analysis
+- recording a short take through the selected microphone
+- importing an audio file and treating it as a take
+- showing input level, clipping, mono/stereo status, and signal confidence
+- discarding and trying again
 
-### Take Comparison
+### Overall Summary
 
-Purpose: answer whether the musical adjustment helped.
+Purpose: answer what happened in singer-friendly language.
+
+Must show:
+
+- whether the take had enough confidence to interpret
+- headline Lock, Ring, Roughness, and Stability results
+- whether comparison to another take is available
+
+### Timing / Chord Behavior
+
+Purpose: explain how a sustained chord developed over time.
+
+Must show, when available:
+
+- consonant/onset duration
+- analyzable vowel start
+- time to lock
+- time to ring
+- best lock and best ring attempts
+
+Chord timing is a section inside Take Analysis, not a separate user-facing destination.
+
+### Phrase Segmentation
+
+Purpose: eventually split longer takes into useful regions.
+
+This is not required for the current MVP, but when implemented it should feed a Phrase section inside Take Analysis.
+
+### Timeline / Visual Evidence
+
+Purpose: let singers see why the summary says what it says.
+
+May include:
+
+- spectrum and spectrogram evidence
+- metric curves
+- chord timing markers
+- phrase region overlays
+
+Visualizations should support Take Analysis rather than becoming a separate product mode.
+
+### Compare
+
+Purpose: answer whether a musical adjustment helped.
 
 Must show:
 
 - before/after summary for Lock, Ring, Roughness, and Stability
+- timing or phrase differences when available
 - simple directional language
 - enough detail to see whether confidence or clipping affected the result
-- an option to clear and try again
 
 ## Basic Terminology
+
+Take:
+A recorded or imported audio attempt that can be analyzed, saved, compared, retried, or discarded.
+
+Take Analysis:
+The user-facing analysis surface for one take. Timing, phrase, visualization, scoring, and comparison features should
+appear as sections or actions here.
 
 Lock:
 Pitch and harmonic alignment around simple relationships. The MVP should present this as "more locked" or "less locked,"
@@ -110,11 +169,12 @@ In scope:
 
 - macOS-native app
 - single microphone input
+- imported audio treated as takes
 - built-in and external microphone selection
-- live level and signal-quality monitoring
-- live Lock, Ring, Roughness, and Stability meters
-- short take recording
-- Take A vs Take B comparison
+- signal-quality monitoring
+- Take Analysis for Lock, Ring, Roughness, and Stability
+- chord timing inside Take Analysis when available
+- take comparison
 - synthetic fixture tests for DSP behavior
 - clear documentation of scoring limitations
 
@@ -129,19 +189,20 @@ Out of scope:
 - mobile or web versions
 - AI coaching claims
 - polished studio production tools
+- separate Chord Lab or Phrase Lab destinations as primary user workflows
 
 ## Success Criteria
 
-The MVP is successful when a quartet can use it during rehearsal to make one focused adjustment and understand whether
-the combined sound moved in a better direction.
+The MVP is successful when a quartet can use it during rehearsal to record or import a take, understand the take, make
+one focused adjustment, and decide what to do next.
 
 Concrete success criteria:
 
 - A fresh checkout builds and tests in CI.
-- The app opens quickly and starts listening with minimal setup.
-- Live meters update without distracting latency.
-- Short takes can be recorded and compared.
-- The comparison shows directionally useful changes.
+- The app opens quickly and makes record/import obvious.
+- Take Analysis appears after a take exists.
+- Short takes can be recorded or imported.
+- Comparison shows directionally useful changes.
 - Warnings make bad input obvious.
 - The app avoids overclaiming what a single microphone can know.
 
@@ -153,12 +214,11 @@ Capture these ideas for later without pulling them into the first usable workflo
 - root selection or pitch reference
 - singer-specific diagnosis
 - multi-microphone capture
-- rehearsal clip library
+- rehearsal take library
 - trend history across sessions
 - coach annotations
 - exportable reports
 - real recording calibration sets
 - advanced harmonic entropy or temporal partial tracking
 
-The MVP should stay small enough to test with real singers early. Every feature should serve the Take A vs Take B
-rehearsal comparison until that workflow feels useful.
+Every feature should serve the unified Take Analysis workflow until that workflow feels useful with real singers.
