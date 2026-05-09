@@ -18,6 +18,7 @@ protocol AudioInputManaging {
 final class AudioInputManager: AudioInputManaging {
     private let engine = AVAudioEngine()
     private let bufferSize: AVAudioFrameCount
+    private let preferenceStore: AudioInputDevicePreferenceStoring
     private var selectedDevice: AudioInputDevice?
 
     private(set) var devices: [AudioInputDevice]
@@ -34,10 +35,17 @@ final class AudioInputManager: AudioInputManaging {
         return names.isEmpty ? ["Default Microphone"] : names
     }
 
-    init(bufferSize: AVAudioFrameCount = 1_024) {
+    init(
+        bufferSize: AVAudioFrameCount = 1_024,
+        preferenceStore: AudioInputDevicePreferenceStoring = UserDefaultsAudioInputDevicePreferenceStore()
+    ) {
         self.bufferSize = bufferSize
+        self.preferenceStore = preferenceStore
         self.devices = Self.discoverDevices()
-        self.selectedDevice = devices.first
+        self.selectedDevice = AudioInputDeviceSelector.choosePreferredDevice(
+            from: devices,
+            savedPreference: preferenceStore.load()
+        )
     }
 
     func start() {
@@ -70,6 +78,9 @@ final class AudioInputManager: AudioInputManaging {
 
     func selectInput(named inputName: String) {
         selectedDevice = devices.first { $0.name == inputName }
+        if let selectedDevice {
+            preferenceStore.save(AudioInputDevicePreference(device: selectedDevice))
+        }
 
         if state == .running {
             stop()
@@ -83,7 +94,10 @@ final class AudioInputManager: AudioInputManaging {
             return
         }
 
-        selectedDevice = devices.first
+        selectedDevice = AudioInputDeviceSelector.choosePreferredDevice(
+            from: devices,
+            savedPreference: preferenceStore.load()
+        )
     }
 
     private func configureAndStartEngine() {
@@ -238,4 +252,97 @@ struct AudioInputDevice: Equatable, Identifiable {
     let id: String
     let name: String
     let audioDeviceID: AudioDeviceID
+}
+
+struct AudioInputDevicePreference: Codable, Equatable, Sendable {
+    let deviceID: String
+    let label: String
+    let savedAt: Date
+
+    init(deviceID: String, label: String, savedAt: Date = Date()) {
+        self.deviceID = deviceID
+        self.label = label
+        self.savedAt = savedAt
+    }
+
+    init(device: AudioInputDevice, savedAt: Date = Date()) {
+        self.init(deviceID: device.id, label: device.name, savedAt: savedAt)
+    }
+}
+
+protocol AudioInputDevicePreferenceStoring {
+    func load() -> AudioInputDevicePreference?
+    func save(_ preference: AudioInputDevicePreference)
+}
+
+struct UserDefaultsAudioInputDevicePreferenceStore: AudioInputDevicePreferenceStoring {
+    private let key = "LockAndRing.AudioInputDevicePreference"
+    private let userDefaults: UserDefaults
+
+    init(userDefaults: UserDefaults = .standard) {
+        self.userDefaults = userDefaults
+    }
+
+    func load() -> AudioInputDevicePreference? {
+        guard let data = userDefaults.data(forKey: key) else {
+            return nil
+        }
+
+        return try? JSONDecoder().decode(AudioInputDevicePreference.self, from: data)
+    }
+
+    func save(_ preference: AudioInputDevicePreference) {
+        guard let data = try? JSONEncoder().encode(preference) else {
+            return
+        }
+
+        userDefaults.set(data, forKey: key)
+    }
+}
+
+enum AudioInputDeviceSelector {
+    static func choosePreferredDevice(
+        from devices: [AudioInputDevice],
+        savedPreference: AudioInputDevicePreference?
+    ) -> AudioInputDevice? {
+        if let savedPreference,
+           let savedDevice = devices.first(where: { $0.id == savedPreference.deviceID }) {
+            return savedDevice
+        }
+
+        if let savedPreference,
+           let labelMatch = devices.first(where: { normalized($0.name) == normalized(savedPreference.label) }) {
+            return labelMatch
+        }
+
+        if let builtInDevice = devices.first(where: isBuiltInOrLocalMacMicrophone) {
+            return builtInDevice
+        }
+
+        if let nonContinuityDevice = devices.first(where: { !isContinuityDevice($0) }) {
+            return nonContinuityDevice
+        }
+
+        return devices.first
+    }
+
+    private static func isBuiltInOrLocalMacMicrophone(_ device: AudioInputDevice) -> Bool {
+        let label = normalized(device.name)
+        return label.contains("macbook")
+            || label.contains("built in")
+            || label.contains("builtin")
+            || label.contains("internal")
+    }
+
+    private static func isContinuityDevice(_ device: AudioInputDevice) -> Bool {
+        normalized(device.name).contains("iphone")
+    }
+
+    private static func normalized(_ label: String) -> String {
+        label
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .lowercased()
+            .replacingOccurrences(of: "-", with: " ")
+            .replacingOccurrences(of: "_", with: " ")
+    }
 }

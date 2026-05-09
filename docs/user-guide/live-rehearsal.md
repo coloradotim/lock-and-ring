@@ -8,6 +8,11 @@ The app opens in a simple Ready state with two primary choices:
 - Record Take
 - Import Take
 
+The selected microphone is remembered locally. On launch, Lock & Ring tries the
+saved device first, then prefers a built-in or internal Mac microphone before an
+iPhone or Continuity microphone. Changing the Mic menu saves that choice
+immediately.
+
 While recording, the screen stays intentionally quiet. It shows elapsed time,
 signal quality, and a Stop action. The full Lock, Ring, Roughness, Stability,
 timing, phrase, and visual evidence sections appear after the take exists.
