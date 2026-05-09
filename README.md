@@ -91,6 +91,9 @@ That means:
 - Clear issue tracking
 - Real documentation
 
+Architecture Decision Records live in [`docs/adr/`](docs/adr/) for important
+technical, DSP, product, and rehearsal workflow decisions.
+
 ## Proposed architecture
 
 ```text
