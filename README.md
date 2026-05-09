@@ -130,3 +130,104 @@ This project attempts to measure some of those qualities in real time without de
 ## Status
 
 Early prototype / research phase.
+
+## Repository layout
+
+```text
+LockAndRing/
+  App/
+  Audio/
+  Analysis/
+  UI/
+  Models/
+LockAndRingTests/
+```
+
+The first scaffold gives the app a real native shell, a live audio-input pipeline, and a placeholder analysis layer.
+DSP scoring and rehearsal-specific interpretation remain focused follow-up issues.
+
+## Audio input
+
+The initial audio pipeline uses `AVAudioEngine` to install a low-latency tap on the selected input and publish
+normalized frames for downstream analysis. Each frame includes:
+
+- Sample rate
+- Frame size
+- Channel count
+- Mono samples for MVP scoring
+- Preserved per-channel samples
+- RMS input level
+- Left/right RMS levels for stereo microphones
+- Clipping and per-channel clipping state
+- Channel imbalance state
+- Noise-floor estimate
+- Signal present/no signal state
+
+Stereo input is intentionally downmixed for the main analysis path with:
+
+```text
+mono = (left + right) / 2
+```
+
+The original channel samples and channel metadata remain available for later stereo-aware analysis.
+
+## Spectrum and spectrogram
+
+Live audio frames are converted into FFT snapshots with an Accelerate/vDSP pipeline:
+
+- Hann windowing
+- Real FFT
+- Frequency-bin conversion
+- Magnitude normalization
+- Optional frame-to-frame smoothing
+- Peak extraction
+
+The SwiftUI spectrum view highlights detected peaks and broad harmonic regions. The spectrogram view keeps a reduced,
+scrolling history of recent FFT frames so changing chords can be tracked over time without coupling rendering to the
+analysis implementation.
+
+## Requirements
+
+- macOS 14 or newer
+- Swift 5.10 or newer
+- Xcode or Apple Command Line Tools
+- SwiftLint for local linting
+
+Install SwiftLint with Homebrew if it is not already available:
+
+```sh
+brew install swiftlint
+```
+
+## Build
+
+```sh
+swift build
+```
+
+## Run
+
+```sh
+swift run LockAndRing
+```
+
+The app launches a minimal SwiftUI window with:
+
+- App title
+- Audio input selector placeholder
+- Empty Lock, Ring, Roughness, and Stability meters
+- Placeholder spectrum view
+
+## Test
+
+```sh
+swift test
+```
+
+## Lint
+
+```sh
+swiftlint lint --strict
+```
+
+GitHub Actions runs build, tests, and SwiftLint on pull requests.
