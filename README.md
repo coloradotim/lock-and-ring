@@ -39,6 +39,7 @@ A macOS app that:
 - Opens on a Ready screen with Record Take and Import Take as the primary actions.
 - Shows Take Analysis after a take exists.
 - Lets singers save, compare, try again, or discard.
+- Saves takes locally with replayable audio and basic analysis metadata.
 - Captures live microphone audio.
 - Runs low-latency FFT/spectral analysis.
 - Displays take-level metrics for:

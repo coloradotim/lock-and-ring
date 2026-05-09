@@ -1,3 +1,4 @@
+import AVFoundation
 import Foundation
 
 @MainActor
@@ -7,12 +8,16 @@ final class AppViewModel {
     var offlineAnalyzer: OfflineAudioAnalyzer
     var currentFrame: AnalysisFrame
     var takeRecorder: TakeRecorder
+    var takeLibrary: SavedTakeLibrary
     var workflowState: MainWorkflowState = .ready
     var currentTake: RecordedTake?
     var savedTake: RecordedTake?
+    var savedTakes: [SavedTake]
+    var libraryErrorMessage: String?
     var meterHistory: [MeterSnapshot]
     var latestAnalysisInputFrame: AudioInputFrame?
     private var takePlaybackTask: Task<Void, Never>?
+    private var audioPlayer: AVAudioPlayer?
     private var analysisScorer: CompositeAnalysisScorer
     private let offlineFrameSize = 2_048
 
@@ -20,13 +25,16 @@ final class AppViewModel {
         inputManager: AudioInputManager? = nil,
         offlineAnalyzer: OfflineAudioAnalyzer? = nil,
         currentFrame: AnalysisFrame = .placeholder,
-        takeRecorder: TakeRecorder? = nil
+        takeRecorder: TakeRecorder? = nil,
+        takeLibrary: SavedTakeLibrary = SavedTakeLibrary()
     ) {
         self.inputManager = inputManager ?? AudioInputManager()
         self.offlineAnalyzer = offlineAnalyzer ?? OfflineAudioAnalyzer()
         self.currentFrame = currentFrame
         self.takeRecorder = takeRecorder ?? TakeRecorder()
+        self.takeLibrary = takeLibrary
         self.meterHistory = [currentFrame.meters]
+        self.savedTakes = (try? takeLibrary.load()) ?? []
         self.analysisScorer = CompositeAnalysisScorer()
         self.inputManager.onFrame = { [weak self] frame in
             self?.analyze(frame)
@@ -49,6 +57,8 @@ final class AppViewModel {
     func stopAudio() {
         takePlaybackTask?.cancel()
         takePlaybackTask = nil
+        audioPlayer?.stop()
+        audioPlayer = nil
         inputManager.stop()
     }
 
@@ -78,7 +88,17 @@ final class AppViewModel {
     }
 
     func saveCurrentTake() {
-        savedTake = currentTake
+        guard let currentTake else {
+            return
+        }
+
+        do {
+            _ = try takeLibrary.save(currentTake)
+            savedTake = currentTake
+            reloadSavedTakes()
+        } catch {
+            libraryErrorMessage = error.localizedDescription
+        }
     }
 
     func discardCurrentTake() {
@@ -115,6 +135,54 @@ final class AppViewModel {
         workflowState = currentTake == nil ? .ready : .reviewingTake
     }
 
+    func renameSavedTake(_ savedTake: SavedTake, to name: String) {
+        do {
+            _ = try takeLibrary.rename(id: savedTake.id, to: name)
+            reloadSavedTakes()
+        } catch {
+            libraryErrorMessage = error.localizedDescription
+        }
+    }
+
+    func deleteSavedTake(_ savedTake: SavedTake) {
+        do {
+            try takeLibrary.delete(id: savedTake.id)
+            reloadSavedTakes()
+        } catch {
+            libraryErrorMessage = error.localizedDescription
+        }
+    }
+
+    func playSavedTake(_ savedTake: SavedTake) {
+        do {
+            let clip = try takeLibrary.audioClip(for: savedTake)
+            audioPlayer = try AVAudioPlayer(contentsOf: savedTake.audioURL)
+            audioPlayer?.play()
+            replay(clip: clip)
+        } catch {
+            libraryErrorMessage = error.localizedDescription
+        }
+    }
+
+    func analyzeSavedTake(_ savedTake: SavedTake) {
+        do {
+            let clip = try takeLibrary.audioClip(for: savedTake)
+            currentTake = analyzedTake(from: clip, name: savedTake.name, source: savedTake.source)
+            workflowState = currentTake == nil ? .ready : .reviewingTake
+        } catch {
+            libraryErrorMessage = error.localizedDescription
+        }
+    }
+
+    func useSavedTakeForComparison(_ savedTake: SavedTake) {
+        do {
+            let clip = try takeLibrary.audioClip(for: savedTake)
+            self.savedTake = analyzedTake(from: clip, name: savedTake.name, source: savedTake.source)
+        } catch {
+            libraryErrorMessage = error.localizedDescription
+        }
+    }
+
     func playTake(slot: TakeSlot) {
         guard let take = takeRecorder.take(for: slot), !take.frames.isEmpty else {
             return
@@ -145,10 +213,14 @@ final class AppViewModel {
     private func analyze(_ frame: AudioInputFrame) {
         let analyzedFrame = analyzedFrame(for: frame, timestamp: Date())
         publish(analyzedFrame, inputFrame: frame)
-        takeRecorder.record(analyzedFrame)
+        takeRecorder.record(analyzedFrame, inputFrame: frame)
     }
 
-    private func analyzedTake(from clip: OfflineAudioClip) -> RecordedTake? {
+    private func analyzedTake(
+        from clip: OfflineAudioClip,
+        name: String? = nil,
+        source: TakeSource = .imported
+    ) -> RecordedTake? {
         let startedAt = Date()
         let frameDuration = Double(offlineFrameSize) / clip.sampleRate
         var frames: [AnalysisFrame] = []
@@ -171,11 +243,61 @@ final class AppViewModel {
 
         return RecordedTake(
             slot: .takeA,
-            name: "Imported take: \(clip.fileName)",
+            name: name ?? "Imported take: \(clip.fileName)",
             startedAt: startedAt,
             endedAt: startedAt.addingTimeInterval(clip.duration),
-            frames: frames
+            frames: frames,
+            source: source,
+            audioClip: clip
         )
+    }
+
+    private func replay(clip: OfflineAudioClip) {
+        takePlaybackTask?.cancel()
+        inputManager.stop()
+        takePlaybackTask = Task { [weak self] in
+            var time = 0.0
+            let frameDuration = Double(self?.offlineFrameSize ?? 2_048) / clip.sampleRate
+
+            while time < clip.duration {
+                guard !Task.isCancelled else {
+                    return
+                }
+
+                if let inputFrame = clip.frame(
+                    at: time,
+                    frameSize: self?.offlineFrameSize ?? 2_048
+                ) {
+                    await MainActor.run {
+                        guard let self else {
+                            return
+                        }
+
+                        self.publish(
+                            self.analyzedFrame(for: inputFrame, timestamp: Date()),
+                            inputFrame: inputFrame
+                        )
+                    }
+                }
+
+                time += frameDuration
+                try? await Task.sleep(nanoseconds: UInt64(frameDuration * 1_000_000_000))
+            }
+
+            await MainActor.run {
+                self?.takePlaybackTask = nil
+                self?.startAudio()
+            }
+        }
+    }
+
+    private func reloadSavedTakes() {
+        do {
+            savedTakes = try takeLibrary.load()
+            libraryErrorMessage = nil
+        } catch {
+            libraryErrorMessage = error.localizedDescription
+        }
     }
 
     private func analyzedFrame(for frame: AudioInputFrame, timestamp: Date) -> AnalysisFrame {

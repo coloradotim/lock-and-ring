@@ -1,5 +1,19 @@
 import Foundation
 
+enum TakeSource: String, Codable, Equatable, Sendable {
+    case recorded
+    case imported
+
+    var title: String {
+        switch self {
+        case .recorded:
+            "Recorded"
+        case .imported:
+            "Imported"
+        }
+    }
+}
+
 enum TakeSlot: String, CaseIterable, Equatable, Sendable {
     case takeA
     case takeB
@@ -30,6 +44,8 @@ struct RecordedTake: Identifiable, Equatable, Sendable {
     let startedAt: Date
     let endedAt: Date
     let frames: [AnalysisFrame]
+    let source: TakeSource
+    let audioClip: OfflineAudioClip?
 
     init(
         id: UUID = UUID(),
@@ -37,7 +53,9 @@ struct RecordedTake: Identifiable, Equatable, Sendable {
         name: String,
         startedAt: Date,
         endedAt: Date,
-        frames: [AnalysisFrame]
+        frames: [AnalysisFrame],
+        source: TakeSource = .recorded,
+        audioClip: OfflineAudioClip? = nil
     ) {
         self.id = id
         self.slot = slot
@@ -45,6 +63,8 @@ struct RecordedTake: Identifiable, Equatable, Sendable {
         self.startedAt = startedAt
         self.endedAt = endedAt
         self.frames = frames
+        self.source = source
+        self.audioClip = audioClip
     }
 
     var duration: TimeInterval {
@@ -232,6 +252,7 @@ final class TakeRecorder {
     private(set) var activeSlot: TakeSlot?
     private(set) var recordingStartedAt: Date?
     private(set) var recordingFrames: [AnalysisFrame] = []
+    private(set) var recordingAudioFrames: [AudioInputFrame] = []
 
     var comparison: TakeComparisonSummary? {
         guard let takeA, let takeB else {
@@ -258,14 +279,18 @@ final class TakeRecorder {
         activeSlot = slot
         recordingStartedAt = now
         recordingFrames = []
+        recordingAudioFrames = []
     }
 
-    func record(_ frame: AnalysisFrame) {
+    func record(_ frame: AnalysisFrame, inputFrame: AudioInputFrame? = nil) {
         guard activeSlot != nil else {
             return
         }
 
         recordingFrames.append(frame)
+        if let inputFrame {
+            recordingAudioFrames.append(inputFrame)
+        }
     }
 
     func finishRecording(now: Date = Date()) {
@@ -278,12 +303,15 @@ final class TakeRecorder {
             name: activeSlot.defaultName,
             startedAt: recordingStartedAt,
             endedAt: now,
-            frames: recordingFrames
+            frames: recordingFrames,
+            source: .recorded,
+            audioClip: Self.audioClip(from: recordingAudioFrames, name: activeSlot.defaultName)
         )
         set(take, for: activeSlot)
         self.activeSlot = nil
         self.recordingStartedAt = nil
         recordingFrames = []
+        recordingAudioFrames = []
     }
 
     func clear(slot: TakeSlot) {
@@ -291,6 +319,7 @@ final class TakeRecorder {
             activeSlot = nil
             recordingStartedAt = nil
             recordingFrames = []
+            recordingAudioFrames = []
         }
 
         set(nil, for: slot)
@@ -303,5 +332,30 @@ final class TakeRecorder {
         case .takeB:
             takeB = take
         }
+    }
+
+    private static func audioClip(from frames: [AudioInputFrame], name: String) -> OfflineAudioClip? {
+        guard let firstFrame = frames.first else {
+            return nil
+        }
+
+        let channelCount = max(firstFrame.channelCount, 1)
+        var channels = Array(repeating: [Float](), count: channelCount)
+
+        for frame in frames {
+            for channelIndex in 0..<channelCount {
+                if channelIndex < frame.channelSamples.count {
+                    channels[channelIndex].append(contentsOf: frame.channelSamples[channelIndex])
+                } else {
+                    channels[channelIndex].append(contentsOf: frame.monoSamples)
+                }
+            }
+        }
+
+        return OfflineAudioClip(
+            fileName: "\(name).wav",
+            sampleRate: firstFrame.sampleRate,
+            channelSamples: channels
+        )
     }
 }
