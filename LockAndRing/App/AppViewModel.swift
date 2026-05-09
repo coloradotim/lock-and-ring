@@ -7,6 +7,7 @@ final class AppViewModel {
     var offlineAnalyzer: OfflineAudioAnalyzer
     var currentFrame: AnalysisFrame
     var takeRecorder: TakeRecorder
+    var meterHistory: [MeterSnapshot]
     private var takePlaybackTask: Task<Void, Never>?
     private let spectrumAnalyzer: SpectrumAnalyzer
     private let roughnessScorer: RoughnessScorer
@@ -23,6 +24,7 @@ final class AppViewModel {
         self.offlineAnalyzer = offlineAnalyzer ?? OfflineAudioAnalyzer()
         self.currentFrame = currentFrame
         self.takeRecorder = takeRecorder ?? TakeRecorder()
+        self.meterHistory = [currentFrame.meters]
         self.spectrumAnalyzer = SpectrumAnalyzer()
         self.roughnessScorer = RoughnessScorer()
         self.ringScorer = RingScorer()
@@ -113,6 +115,7 @@ final class AppViewModel {
             ringHistory: currentFrame.ringHistory.appending(ring)
         )
         currentFrame = analyzedFrame
+        meterHistory = Array((meterHistory + [meters]).suffix(64))
         takeRecorder.record(analyzedFrame)
     }
 }
