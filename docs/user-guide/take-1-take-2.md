@@ -8,10 +8,10 @@ Recommended workflow:
 1. Record or import a take.
 2. Review Take Analysis: signal quality, Lock, Ring, Roughness, Stability,
    timing, and visual evidence.
-3. Save the take, compare it, try again, or discard it.
+3. Save the take if it should become the comparison reference.
 4. Make one musical adjustment.
 5. Record or import another take.
-6. Compare the takes.
+6. Compare the current take against the saved take, try again, or discard it.
 
 When chord timing is available, it should appear as a Take Analysis section:
 consonant/onset duration, analyzable vowel start, time to lock, time to ring,
