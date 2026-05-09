@@ -145,33 +145,13 @@ struct MetricDisplayState: Identifiable, Equatable, Sendable {
 
         switch snapshot.kind {
         case .lock:
-            return MetricLabelMapper.label(for: snapshot.score.value, bands: [
-                MetricLabelBand(upperBound: 0.2, label: "Not aligned"),
-                MetricLabelBand(upperBound: 0.5, label: "Searching"),
-                MetricLabelBand(upperBound: 0.75, label: "Mostly aligned"),
-                MetricLabelBand(upperBound: 1, label: "Locked")
-            ])
+            return MetricLabelMapper.label(for: snapshot.score.value, bands: MetricLabelDefinitions.lock)
         case .ring:
-            return MetricLabelMapper.label(for: snapshot.score.value, bands: [
-                MetricLabelBand(upperBound: 0.2, label: "No ring"),
-                MetricLabelBand(upperBound: 0.5, label: "Developing"),
-                MetricLabelBand(upperBound: 0.75, label: "Present"),
-                MetricLabelBand(upperBound: 1, label: "Strong")
-            ])
+            return MetricLabelMapper.label(for: snapshot.score.value, bands: MetricLabelDefinitions.ring)
         case .roughness:
-            return MetricLabelMapper.label(for: snapshot.score.value, bands: [
-                MetricLabelBand(upperBound: 0.2, label: "Smooth"),
-                MetricLabelBand(upperBound: 0.5, label: "Some interference"),
-                MetricLabelBand(upperBound: 0.75, label: "Rough"),
-                MetricLabelBand(upperBound: 1, label: "Highly unstable")
-            ])
+            return MetricLabelMapper.label(for: snapshot.score.value, bands: MetricLabelDefinitions.roughness)
         case .stability:
-            return MetricLabelMapper.label(for: snapshot.score.value, bands: [
-                MetricLabelBand(upperBound: 0.2, label: "Unstable"),
-                MetricLabelBand(upperBound: 0.5, label: "Drifting"),
-                MetricLabelBand(upperBound: 0.75, label: "Holding"),
-                MetricLabelBand(upperBound: 1, label: "Stable")
-            ])
+            return MetricLabelMapper.label(for: snapshot.score.value, bands: MetricLabelDefinitions.stability)
         }
     }
 
@@ -209,6 +189,49 @@ struct MetricDisplayState: Identifiable, Equatable, Sendable {
 struct MetricLabelBand: Equatable, Sendable {
     let upperBound: Double
     let label: String
+}
+
+enum MetricLabelDefinitions {
+    static let lock = [
+        MetricLabelBand(upperBound: 0.2, label: "Not aligned"),
+        MetricLabelBand(upperBound: 0.5, label: "Searching"),
+        MetricLabelBand(upperBound: 0.75, label: "Mostly aligned"),
+        MetricLabelBand(upperBound: 1, label: "Locked")
+    ]
+
+    static let ring = [
+        MetricLabelBand(upperBound: 0.2, label: "No ring"),
+        MetricLabelBand(upperBound: 0.5, label: "Developing"),
+        MetricLabelBand(upperBound: 0.75, label: "Present"),
+        MetricLabelBand(upperBound: 1, label: "Strong")
+    ]
+
+    static let roughness = [
+        MetricLabelBand(upperBound: 0.2, label: "Smooth"),
+        MetricLabelBand(upperBound: 0.5, label: "Some interference"),
+        MetricLabelBand(upperBound: 0.75, label: "Rough"),
+        MetricLabelBand(upperBound: 1, label: "Highly unstable")
+    ]
+
+    static let stability = [
+        MetricLabelBand(upperBound: 0.2, label: "Unstable"),
+        MetricLabelBand(upperBound: 0.5, label: "Drifting"),
+        MetricLabelBand(upperBound: 0.75, label: "Holding"),
+        MetricLabelBand(upperBound: 1, label: "Stable")
+    ]
+
+    static func bands(for kind: MetricKind) -> [MetricLabelBand] {
+        switch kind {
+        case .lock:
+            lock
+        case .ring:
+            ring
+        case .roughness:
+            roughness
+        case .stability:
+            stability
+        }
+    }
 }
 
 enum MetricLabelMapper {
