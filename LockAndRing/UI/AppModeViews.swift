@@ -116,6 +116,8 @@ struct TakesModeView: View {
                 Text(AppMode.takes.primaryQuestion)
                     .font(.headline)
 
+                ModeHelpDisclosure(mode: .takes)
+
                 TakeComparisonView(
                     recorder: recorder,
                     onRecord: onRecord,
@@ -132,6 +134,8 @@ struct TakesModeView: View {
 struct FileAnalysisModeView: View {
     let analyzer: OfflineAudioAnalyzer
     let displayState: LiveAnalysisDisplayState
+    let frame: AnalysisFrame
+    let inputFrame: AudioInputFrame?
     let spectrum: SpectrumSnapshot
     let spectrogram: SpectrogramSnapshot
 
@@ -139,6 +143,8 @@ struct FileAnalysisModeView: View {
         VStack(alignment: .leading, spacing: 16) {
             Text(AppMode.file.primaryQuestion)
                 .font(.headline)
+
+            ModeHelpDisclosure(mode: .file)
 
             OfflineAnalysisView(analyzer: analyzer)
 
@@ -158,6 +164,8 @@ struct FileAnalysisModeView: View {
             }
 
             SpectrumPanel(spectrum: spectrum, spectrogram: spectrogram)
+
+            ScoringInspectorView(frame: frame, inputFrame: inputFrame)
         }
     }
 

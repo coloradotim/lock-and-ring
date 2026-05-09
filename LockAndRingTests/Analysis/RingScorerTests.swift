@@ -75,6 +75,8 @@ final class RingScorerTests: XCTestCase {
         XCTAssertEqual(snapshot.confidence.value, score.confidence)
         XCTAssertEqual(snapshot.signalQuality, .nominal)
         XCTAssertEqual(snapshot.rawMeasurements["matchedHarmonics"], Double(score.matchedHarmonics))
+        XCTAssertEqual(snapshot.rawMeasurements["anchorFrequency"], 220)
+        XCTAssertNotNil(snapshot.rawMeasurements["upperHarmonicEnergyProxy"])
     }
 
     func testNoReliableAnchorReturnsLowConfidence() {

@@ -111,6 +111,9 @@ Avoid overclaiming:
 - Keep PRs reviewable.
 - Before merging, run available tests and document manual test notes.
 - If a change affects app behavior, include a short “How I tested this” section in the PR.
+- When a PR changes user-visible behavior, scoring semantics, metric labels, mode layout,
+  signal-quality behavior, or analysis output, update the relevant user-facing or technical
+  docs in the same PR.
 
 ## Early risk list
 
