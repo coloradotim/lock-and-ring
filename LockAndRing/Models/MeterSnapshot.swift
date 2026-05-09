@@ -5,6 +5,15 @@ struct MeterSnapshot: Equatable, Sendable {
     let ring: MetricScore
     let roughness: MetricScore
     let stability: MetricScore
+
+    func replacingRoughness(with value: Double) -> MeterSnapshot {
+        MeterSnapshot(
+            lock: lock,
+            ring: ring,
+            roughness: MetricScore(value: value),
+            stability: stability
+        )
+    }
 }
 
 struct MetricScore: Equatable, Sendable {
