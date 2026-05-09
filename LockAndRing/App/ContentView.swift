@@ -6,6 +6,7 @@ struct ContentView: View {
     @State private var isImporterPresented = false
     @State private var isDebugExpanded = false
     @State private var isVisualEvidenceExpanded = false
+    @State private var comparisonDisplayMode: TakeTimelineComparison.DisplayMode = .sideBySide
 
     init(viewModel: AppViewModel) {
         _viewModel = State(initialValue: viewModel)
@@ -211,11 +212,20 @@ struct ContentView: View {
             )
 
             if let savedTake = viewModel.savedTake, let currentTake = viewModel.currentTake {
+                let timelineComparison = TakeTimelineComparison(
+                    reference: savedTake,
+                    current: currentTake
+                )
                 UnifiedComparisonView(
                     comparison: TakeComparisonSummary(
                         takeA: savedTake,
                         takeB: currentTake
                     )
+                )
+
+                TimelineComparisonPanel(
+                    comparison: timelineComparison,
+                    mode: $comparisonDisplayMode
                 )
 
                 HStack(spacing: 10) {

@@ -19,6 +19,10 @@ imported takes without coupling future rehearsal sessions to one capture source.
   better, while lower roughness is better.
 - Stability duration estimates the share of take duration whose stability score
   is at least 65%.
+- Timeline comparison aligns takes at the first detected onset when possible.
+  If onset is missing, the comparison falls back to recording start and says so.
+- Side-by-side timelines show phrase segments for each take. Overlay mode shows
+  lock, ring, roughness, and stability curves on a shared time axis.
 
 ## Region Analysis
 
@@ -61,6 +65,28 @@ The timeline legend uses these meanings:
 Markers such as sound onset, vowel start, lock, ring, best lock, and best ring
 are shown only when the analysis can identify them. Missing markers should be
 read as "not enough evidence for that moment," not as a hidden failure.
+
+## Phrase Segmentation
+
+Phrase segmentation appears as a section inside Take Analysis. It is
+chord-agnostic: it does not need chord names, lyrics, or a score. It labels each
+frame with a deterministic first-pass category:
+
+- Silence / breath
+- Low confidence
+- Consonant / onset
+- Transition
+- Tuning / searching
+- Stable, not ringing
+- Locked
+- Ringing
+
+The summary reports phrase duration, consonant/onset time, analyzable vowel
+time, locked vowel time, ringing vowel time, tuning/searching time, stable
+non-ringing time, breath/silence time, and low-confidence time. Locked and
+ringing ratios use analyzable vowel time as the denominator. Consonants and
+breaths are visible for efficiency coaching, but they are not scored as failed
+lock. Low-confidence regions are excluded from strong musical claims.
 
 ## Future take-analysis shape
 
