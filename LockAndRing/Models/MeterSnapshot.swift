@@ -31,6 +31,15 @@ struct MeterSnapshot: Equatable, Sendable {
             stability: stability
         )
     }
+
+    func applyingSignalQuality(_ assessment: SignalQualityAssessment) -> MeterSnapshot {
+        MeterSnapshot(
+            lock: lock.applyingSignalQuality(assessment),
+            ring: ring.applyingSignalQuality(assessment),
+            roughness: roughness.applyingSignalQuality(assessment),
+            stability: stability.applyingSignalQuality(assessment)
+        )
+    }
 }
 
 struct MetricScore: Equatable, Sendable {
@@ -61,5 +70,49 @@ extension MetricSnapshot {
             signalQuality: signalQuality,
             rollingAverage: rollingAverage
         )
+    }
+
+    func applyingSignalQuality(_ assessment: SignalQualityAssessment) -> MetricSnapshot {
+        MetricSnapshot(
+            kind: kind,
+            score: score,
+            confidence: confidence.applyingSignalQuality(assessment),
+            contributingFactors: contributingFactors + assessment.metricFactors,
+            rawMeasurements: rawMeasurements.merging(assessment.rawMeasurements) { current, _ in current },
+            signalQuality: assessment.state,
+            rollingAverage: rollingAverage
+        )
+    }
+}
+
+extension MetricConfidence {
+    func applyingSignalQuality(_ assessment: SignalQualityAssessment) -> MetricConfidence {
+        let gatedValue = value * assessment.confidenceMultiplier
+        let reason = [reason, assessment.displayText]
+            .filter { !$0.isEmpty }
+            .joined(separator: " ")
+
+        return MetricConfidence(value: gatedValue, reason: reason)
+    }
+}
+
+extension SignalQualityAssessment {
+    var metricFactors: [MetricFactor] {
+        [
+            MetricFactor(name: "Input level", value: levelAdequacy, weight: 0.3),
+            MetricFactor(name: "SNR", value: signalToNoiseRatio, weight: 0.25),
+            MetricFactor(name: "Spectral stability", value: spectralStability, weight: 0.25),
+            MetricFactor(name: "Transient cleanliness", value: transientCleanliness, weight: 0.2)
+        ]
+    }
+
+    var rawMeasurements: [String: Double] {
+        [
+            "signalQualityConfidence": confidenceMultiplier,
+            "levelAdequacy": levelAdequacy,
+            "signalToNoiseRatio": signalToNoiseRatio,
+            "spectralStability": spectralStability,
+            "transientCleanliness": transientCleanliness
+        ]
     }
 }

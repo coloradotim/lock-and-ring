@@ -55,6 +55,7 @@ Signal quality captures input problems that should degrade or qualify every metr
 - `lowSignal`
 - `clipping`
 - `noisy`
+- `unstable`
 - `imbalanced`
 - `unavailable`
 
@@ -116,9 +117,22 @@ Confidence should drop when:
 - signal is too quiet
 - clipping is detected
 - channel imbalance is severe
+- signal-to-noise ratio is weak
+- spectral peaks are unstable between frames
+- non-musical transients dominate the frame
 - too few partials are available
 - harmonic anchors are unreliable
 - noise dominates peak extraction
+
+## Signal Quality Gate
+
+`SignalQualityAnalyzer` produces a continuous quality multiplier from input level, clipping, signal-to-noise ratio,
+spectral stability, and transient cleanliness. The app applies this multiplier to every metric snapshot's confidence
+while leaving the metric score intact.
+
+This keeps score and trust separate: noisy input can show a high roughness or ring value with low confidence instead of
+turning uncertainty into fake precision. The UI should visually mute low-confidence metrics and show the primary signal
+quality state near the live meters.
 
 ## Current Implementations
 

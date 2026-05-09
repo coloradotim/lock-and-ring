@@ -11,6 +11,7 @@ final class AppViewModel {
     private let spectrumAnalyzer: SpectrumAnalyzer
     private let roughnessScorer: RoughnessScorer
     private let ringScorer: RingScorer
+    private var signalQualityAnalyzer: SignalQualityAnalyzer
 
     init(
         inputManager: AudioInputManager? = nil,
@@ -25,6 +26,7 @@ final class AppViewModel {
         self.spectrumAnalyzer = SpectrumAnalyzer()
         self.roughnessScorer = RoughnessScorer()
         self.ringScorer = RingScorer()
+        self.signalQualityAnalyzer = SignalQualityAnalyzer()
         self.inputManager.onFrame = { [weak self] frame in
             self?.analyze(frame)
         }
@@ -98,32 +100,19 @@ final class AppViewModel {
         )
         let roughness = roughnessScorer.score(spectrum: spectrum)
         let ring = ringScorer.score(spectrum: spectrum)
+        let signalQuality = signalQualityAnalyzer.analyze(frame: frame, spectrum: spectrum)
+        let meters = currentFrame.meters
+            .replacingRoughness(with: roughness.metricSnapshot())
+            .replacingRing(with: ring.metricSnapshot())
+            .applyingSignalQuality(signalQuality)
         let analyzedFrame = AnalysisFrame(
             timestamp: Date(),
-            meters: currentFrame.meters
-                .replacingRoughness(with: roughness.metricSnapshot(signalQuality: signalQuality(for: frame)))
-                .replacingRing(with: ring.metricSnapshot(signalQuality: signalQuality(for: frame))),
+            meters: meters,
             spectrum: spectrum,
             spectrogram: currentFrame.spectrogram.appending(spectrum),
             ringHistory: currentFrame.ringHistory.appending(ring)
         )
         currentFrame = analyzedFrame
         takeRecorder.record(analyzedFrame)
-    }
-
-    private func signalQuality(for frame: AudioInputFrame) -> SignalQualityState {
-        if frame.instrumentation.isClipping {
-            return .clipping
-        }
-
-        if frame.instrumentation.hasChannelImbalance {
-            return .imbalanced
-        }
-
-        if !frame.instrumentation.hasSignal {
-            return .lowSignal
-        }
-
-        return .nominal
     }
 }
