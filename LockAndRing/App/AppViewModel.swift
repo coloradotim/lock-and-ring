@@ -7,6 +7,7 @@ final class AppViewModel {
     var currentFrame: AnalysisFrame
     private let spectrumAnalyzer: SpectrumAnalyzer
     private let roughnessScorer: RoughnessScorer
+    private let ringScorer: RingScorer
 
     init(
         inputManager: AudioInputManager? = nil,
@@ -16,6 +17,7 @@ final class AppViewModel {
         self.currentFrame = currentFrame
         self.spectrumAnalyzer = SpectrumAnalyzer()
         self.roughnessScorer = RoughnessScorer()
+        self.ringScorer = RingScorer()
         self.inputManager.onFrame = { [weak self] frame in
             self?.analyze(frame)
         }
@@ -35,11 +37,15 @@ final class AppViewModel {
             sampleRate: frame.sampleRate
         )
         let roughness = roughnessScorer.score(spectrum: spectrum)
+        let ring = ringScorer.score(spectrum: spectrum)
         currentFrame = AnalysisFrame(
             timestamp: Date(),
-            meters: currentFrame.meters.replacingRoughness(with: roughness.value),
+            meters: currentFrame.meters
+                .replacingRoughness(with: roughness.value)
+                .replacingRing(with: ring.value),
             spectrum: spectrum,
-            spectrogram: currentFrame.spectrogram.appending(spectrum)
+            spectrogram: currentFrame.spectrogram.appending(spectrum),
+            ringHistory: currentFrame.ringHistory.appending(ring)
         )
     }
 }
