@@ -8,30 +8,41 @@ struct ContentView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 24) {
-            HeaderView()
+        ScrollView {
+            VStack(alignment: .leading, spacing: 24) {
+                HeaderView()
 
-            AudioInputSelectorView(inputManager: viewModel.inputManager)
+                AudioInputSelectorView(inputManager: viewModel.inputManager)
 
-            AudioInputMonitorView(
-                frame: viewModel.inputManager.latestFrame,
-                state: viewModel.inputManager.state
-            )
+                AudioInputMonitorView(
+                    frame: viewModel.inputManager.latestFrame,
+                    state: viewModel.inputManager.state
+                )
 
-            OfflineAnalysisView(analyzer: viewModel.offlineAnalyzer)
+                OfflineAnalysisView(analyzer: viewModel.offlineAnalyzer)
 
-            LiveMetersView(snapshot: viewModel.currentFrame.meters)
+                TakeComparisonView(
+                    recorder: viewModel.takeRecorder,
+                    onRecord: viewModel.startTakeRecording,
+                    onStop: viewModel.stopTakeRecording,
+                    onPlay: viewModel.playTake,
+                    onClear: viewModel.clearTake
+                )
 
-            RingExperimentView(
-                trend: viewModel.currentFrame.ringHistory,
-                meters: viewModel.currentFrame.meters
-            )
+                LiveMetersView(snapshot: viewModel.currentFrame.meters)
 
-            SpectrumView(spectrum: viewModel.currentFrame.spectrum)
+                RingExperimentView(
+                    trend: viewModel.currentFrame.ringHistory,
+                    meters: viewModel.currentFrame.meters
+                )
 
-            SpectrogramView(spectrogram: viewModel.currentFrame.spectrogram)
+                SpectrumView(spectrum: viewModel.currentFrame.spectrum)
+
+                SpectrogramView(spectrogram: viewModel.currentFrame.spectrogram)
+            }
+            .padding(28)
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .padding(28)
         .frame(minWidth: 760, minHeight: 920)
         .background(Color(nsColor: .windowBackgroundColor))
         .onAppear {
