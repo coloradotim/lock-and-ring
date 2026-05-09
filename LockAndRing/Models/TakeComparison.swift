@@ -7,9 +7,9 @@ enum TakeSlot: String, CaseIterable, Equatable, Sendable {
     var title: String {
         switch self {
         case .takeA:
-            "Take A"
+            "Take 1"
         case .takeB:
-            "Take B"
+            "Take 2"
         }
     }
 
@@ -65,6 +65,7 @@ struct TakeSummary: Equatable, Sendable {
     let averageRoughness: Double
     let averageRing: Double
     let averageStability: Double
+    let averageConfidence: Double
     let stabilityDuration: TimeInterval
 
     init(take: RecordedTake, stableThreshold: Double = 0.65) {
@@ -76,6 +77,7 @@ struct TakeSummary: Equatable, Sendable {
         self.averageRoughness = Self.average(take.frames.map(\.meters.roughness.score.value))
         self.averageRing = Self.average(take.frames.map(\.meters.ring.score.value))
         self.averageStability = Self.average(take.frames.map(\.meters.stability.score.value))
+        self.averageConfidence = Self.average(take.frames.map(\.meters.averageConfidence))
         self.stabilityDuration = Self.stabilityDuration(
             frames: take.frames,
             duration: take.duration,
@@ -154,14 +156,14 @@ struct TakeComparisonSummary: Equatable, Sendable {
         let regressedCount = comparisons.filter(\.isRegressed).count
 
         if improvedCount > regressedCount {
-            return "Take B improved"
+            return "Take 2 improved"
         }
 
         if regressedCount > improvedCount {
-            return "Take B moved away"
+            return "Take 2 moved away"
         }
 
-        return "Take B is mixed"
+        return "Take 2 was mixed"
     }
 
     var comparisons: [MetricComparison] {

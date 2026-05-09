@@ -6,7 +6,7 @@ struct HeaderView: View {
             Text("Lock & Ring")
                 .font(.system(size: 34, weight: .semibold, design: .rounded))
 
-            Text("Single-mic ensemble feedback for harmonic lock, ring, roughness, and stability.")
+            Text("Real-time single-mic feedback for tuning, ring, roughness, and stability.")
                 .foregroundStyle(.secondary)
         }
     }

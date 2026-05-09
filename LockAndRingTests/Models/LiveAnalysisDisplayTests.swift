@@ -18,10 +18,41 @@ final class LiveAnalysisDisplayTests: XCTestCase {
     }
 
     func testMetricDisplayLabelsUseSingerFriendlyLanguage() {
-        XCTAssertEqual(MetricDisplayState(snapshot: snapshot(kind: .lock, score: 0.72)).qualityLabel, "Locked")
+        XCTAssertEqual(MetricDisplayState(snapshot: snapshot(kind: .lock, score: 0.72)).qualityLabel, "Mostly aligned")
         XCTAssertEqual(MetricDisplayState(snapshot: snapshot(kind: .ring, score: 0.4)).qualityLabel, "Developing")
         XCTAssertEqual(MetricDisplayState(snapshot: snapshot(kind: .roughness, score: 0.12)).qualityLabel, "Smooth")
         XCTAssertEqual(MetricDisplayState(snapshot: snapshot(kind: .stability, score: 0.62)).qualityLabel, "Holding")
+    }
+
+    func testMetricDisplayLabelThresholdBoundaries() {
+        XCTAssertEqual(MetricDisplayState(snapshot: snapshot(kind: .lock, score: 0.19)).qualityLabel, "Not aligned")
+        XCTAssertEqual(MetricDisplayState(snapshot: snapshot(kind: .lock, score: 0.2)).qualityLabel, "Searching")
+        XCTAssertEqual(MetricDisplayState(snapshot: snapshot(kind: .lock, score: 0.5)).qualityLabel, "Mostly aligned")
+        XCTAssertEqual(MetricDisplayState(snapshot: snapshot(kind: .lock, score: 0.75)).qualityLabel, "Locked")
+        XCTAssertEqual(MetricDisplayState(snapshot: snapshot(kind: .ring, score: 0.49)).qualityLabel, "Developing")
+        XCTAssertEqual(MetricDisplayState(snapshot: snapshot(kind: .ring, score: 0.5)).qualityLabel, "Present")
+        XCTAssertEqual(
+            MetricDisplayState(snapshot: snapshot(kind: .roughness, score: 0.8)).qualityLabel,
+            "Highly unstable"
+        )
+        XCTAssertEqual(MetricDisplayState(snapshot: snapshot(kind: .stability, score: 0.74)).qualityLabel, "Holding")
+        XCTAssertEqual(MetricDisplayState(snapshot: snapshot(kind: .stability, score: 0.75)).qualityLabel, "Stable")
+    }
+
+    func testMetricDisplayLabelsAreOverriddenByLowConfidenceSignalStates() {
+        let lowConfidence = MetricDisplayState(
+            snapshot: snapshot(kind: .lock, score: 0.9, confidence: 0.2)
+        )
+        let lowSignal = MetricDisplayState(
+            snapshot: snapshot(kind: .ring, score: 0.9, signalQuality: .lowSignal)
+        )
+        let clipping = MetricDisplayState(
+            snapshot: snapshot(kind: .stability, score: 0.9, signalQuality: .clipping)
+        )
+
+        XCTAssertEqual(lowConfidence.qualityLabel, "Low confidence")
+        XCTAssertEqual(lowSignal.qualityLabel, "Signal too quiet")
+        XCTAssertEqual(clipping.qualityLabel, "Input clipping")
     }
 
     func testTrendSummaryComparesRecentWindowToPreviousWindow() {
@@ -43,6 +74,11 @@ final class LiveAnalysisDisplayTests: XCTestCase {
         let summary = TrendSummary(history: history)
 
         XCTAssertEqual(summary.items.first?.direction, .notEnoughConfidence)
+        XCTAssertFalse(summary.hasUsableChanges)
+        XCTAssertEqual(
+            summary.lowConfidenceMessage,
+            "Not enough usable signal to evaluate changes yet. Move closer or sing louder."
+        )
     }
 
     func testBaselineComparisonTreatsLowerRoughnessAsImprovement() {
@@ -62,6 +98,14 @@ final class LiveAnalysisDisplayTests: XCTestCase {
             comparison.items.first { $0.kind == .roughness }?.summaryText,
             "Roughness improved 20%"
         )
+    }
+
+    func testSelectedModeControlsPrimaryWorkflow() {
+        XCTAssertTrue(AppModeDisplayState(mode: .live).showsLiveRehearsalWorkflow)
+        XCTAssertFalse(AppModeDisplayState(mode: .live).showsFullTakeWorkflow)
+        XCTAssertFalse(AppModeDisplayState(mode: .live).showsFullFileWorkflow)
+        XCTAssertTrue(AppModeDisplayState(mode: .takes).showsFullTakeWorkflow)
+        XCTAssertTrue(AppModeDisplayState(mode: .file).showsFullFileWorkflow)
     }
 
     private func takeSummary(

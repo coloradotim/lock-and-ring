@@ -1,5 +1,53 @@
 import Foundation
 
+enum AppMode: String, CaseIterable, Identifiable, Equatable, Sendable {
+    case live
+    case takes
+    case file
+
+    var id: String {
+        rawValue
+    }
+
+    var title: String {
+        switch self {
+        case .live:
+            "Live Rehearsal"
+        case .takes:
+            "Take 1 / Take 2"
+        case .file:
+            "Analyze File"
+        }
+    }
+
+    var primaryQuestion: String {
+        switch self {
+        case .live:
+            "What is happening right now as we sing?"
+        case .takes:
+            "Did Take 2 improve compared to Take 1?"
+        case .file:
+            "What does this uploaded sample show?"
+        }
+    }
+}
+
+struct AppModeDisplayState: Equatable, Sendable {
+    let mode: AppMode
+
+    var showsFullTakeWorkflow: Bool {
+        mode == .takes
+    }
+
+    var showsFullFileWorkflow: Bool {
+        mode == .file
+    }
+
+    var showsLiveRehearsalWorkflow: Bool {
+        mode == .live
+    }
+}
+
 struct LiveAnalysisDisplayState: Equatable, Sendable {
     let meters: MeterSnapshot
     let history: [MeterSnapshot]
@@ -91,29 +139,98 @@ struct MetricDisplayState: Identifiable, Equatable, Sendable {
     }
 
     private static func qualityLabel(for snapshot: MetricSnapshot) -> String {
-        let value = snapshot.score.value
+        if let override = confidenceOverride(for: snapshot) {
+            return override
+        }
 
         switch snapshot.kind {
         case .lock:
-            return label(value: value, bands: ["Searching", "Mostly aligned", "Locked"])
+            return MetricLabelMapper.label(for: snapshot.score.value, bands: [
+                MetricLabelBand(upperBound: 0.2, label: "Not aligned"),
+                MetricLabelBand(upperBound: 0.5, label: "Searching"),
+                MetricLabelBand(upperBound: 0.75, label: "Mostly aligned"),
+                MetricLabelBand(upperBound: 1, label: "Locked")
+            ])
         case .ring:
-            return label(value: value, bands: ["None", "Developing", "Present", "Strong"])
+            return MetricLabelMapper.label(for: snapshot.score.value, bands: [
+                MetricLabelBand(upperBound: 0.2, label: "No ring"),
+                MetricLabelBand(upperBound: 0.5, label: "Developing"),
+                MetricLabelBand(upperBound: 0.75, label: "Present"),
+                MetricLabelBand(upperBound: 1, label: "Strong")
+            ])
         case .roughness:
-            return label(value: 1 - value, bands: ["Rough", "Some interference", "Smooth"])
+            return MetricLabelMapper.label(for: snapshot.score.value, bands: [
+                MetricLabelBand(upperBound: 0.2, label: "Smooth"),
+                MetricLabelBand(upperBound: 0.5, label: "Some interference"),
+                MetricLabelBand(upperBound: 0.75, label: "Rough"),
+                MetricLabelBand(upperBound: 1, label: "Highly unstable")
+            ])
         case .stability:
-            return label(value: value, bands: ["Unstable", "Drifting", "Holding", "Stable"])
+            return MetricLabelMapper.label(for: snapshot.score.value, bands: [
+                MetricLabelBand(upperBound: 0.2, label: "Unstable"),
+                MetricLabelBand(upperBound: 0.5, label: "Drifting"),
+                MetricLabelBand(upperBound: 0.75, label: "Holding"),
+                MetricLabelBand(upperBound: 1, label: "Stable")
+            ])
         }
     }
 
-    private static func label(value: Double, bands: [String]) -> String {
+    private static func confidenceOverride(for snapshot: MetricSnapshot) -> String? {
+        switch snapshot.signalQuality {
+        case .unavailable:
+            return "No analysis yet"
+        default:
+            break
+        }
+
+        if snapshot.confidence.value < 0.35 {
+            return "Low confidence"
+        }
+
+        switch snapshot.signalQuality {
+        case .nominal:
+            return nil
+        case .lowSignal:
+            return "Signal too quiet"
+        case .clipping:
+            return "Input clipping"
+        case .noisy:
+            return "Noisy input"
+        case .unstable:
+            return "Unstable signal"
+        case .imbalanced:
+            return "Check mic placement"
+        case .unavailable:
+            return "No analysis yet"
+        }
+    }
+}
+
+struct MetricLabelBand: Equatable, Sendable {
+    let upperBound: Double
+    let label: String
+}
+
+enum MetricLabelMapper {
+    static func label(for value: Double, bands: [MetricLabelBand]) -> String {
         let clamped = min(max(value, 0), 1)
-        let index = min(Int(clamped * Double(bands.count)), bands.count - 1)
-        return bands[index]
+
+        return bands.first { clamped < $0.upperBound }?.label
+            ?? bands.last?.label
+            ?? ""
     }
 }
 
 struct TrendSummary: Equatable, Sendable {
     let items: [MetricTrendItem]
+
+    var hasUsableChanges: Bool {
+        items.contains { $0.direction != .notEnoughConfidence }
+    }
+
+    var lowConfidenceMessage: String {
+        "Not enough usable signal to evaluate changes yet. Move closer or sing louder."
+    }
 
     init(history: [MeterSnapshot]) {
         guard history.count >= 32 else {
