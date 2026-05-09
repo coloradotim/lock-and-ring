@@ -242,22 +242,26 @@ struct ChordTimingDisplayState: Equatable, Sendable {
 struct PhraseSegmentationDisplayState: Equatable, Sendable {
     let confidenceState: AnalysisConfidenceState
     let warningMessage: String?
+    let summary: String
 
     init(regionStates: [AnalysisConfidenceState]) {
         if regionStates.isEmpty {
             self.confidenceState = .unavailable(reason: .noAnalysis)
             self.warningMessage = "Some regions could not be classified because there was not enough analyzable audio."
+            self.summary = "Phrase segmentation is not available for this take yet."
             return
         }
 
         if let lowConfidence = regionStates.first(where: { !$0.isReliable }) {
             self.confidenceState = lowConfidence
             self.warningMessage = "Some regions could not be classified because the signal was too quiet or unstable."
+            self.summary = "Phrase timing is uncertain for this take."
             return
         }
 
         self.confidenceState = .reliable
         self.warningMessage = nil
+        self.summary = "Phrase segmentation will appear here as phrase modules become available."
     }
 }
 

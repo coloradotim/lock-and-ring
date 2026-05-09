@@ -36,6 +36,7 @@ Instead, the app analyzes the combined waveform and evaluates the overall harmon
 A macOS app that:
 
 - Records or imports short rehearsal takes.
+- Opens on a Ready screen with Record Take and Import Take as the primary actions.
 - Shows Take Analysis after a take exists.
 - Lets singers save, compare, try again, or discard.
 - Captures live microphone audio.
