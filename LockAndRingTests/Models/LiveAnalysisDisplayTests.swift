@@ -39,6 +39,27 @@ final class LiveAnalysisDisplayTests: XCTestCase {
         XCTAssertEqual(MetricDisplayState(snapshot: snapshot(kind: .stability, score: 0.75)).qualityLabel, "Stable")
     }
 
+    func testAllMetricLabelDefinitionsUseDocumentedBands() {
+        let expected: [(MetricKind, [(Double, String)])] = [
+            (.lock, [(0.19, "Not aligned"), (0.2, "Searching"), (0.5, "Mostly aligned"), (0.75, "Locked")]),
+            (.ring, [(0.19, "No ring"), (0.2, "Developing"), (0.5, "Present"), (0.75, "Strong")]),
+            (
+                .roughness,
+                [(0.19, "Smooth"), (0.2, "Some interference"), (0.5, "Rough"), (0.75, "Highly unstable")]
+            ),
+            (.stability, [(0.19, "Unstable"), (0.2, "Drifting"), (0.5, "Holding"), (0.75, "Stable")])
+        ]
+
+        for (kind, cases) in expected {
+            for (score, label) in cases {
+                XCTAssertEqual(
+                    MetricDisplayState(snapshot: snapshot(kind: kind, score: score)).qualityLabel,
+                    label
+                )
+            }
+        }
+    }
+
     func testMetricDisplayLabelsAreOverriddenByLowConfidenceSignalStates() {
         let lowConfidence = MetricDisplayState(
             snapshot: snapshot(kind: .lock, score: 0.9, confidence: 0.2)

@@ -3,6 +3,7 @@
 Technical and scoring notes currently live in the top-level `docs/` directory:
 
 - [Scoring contract](../scoring-contract.md)
+- [Metric labels](../metric-labels.md)
 - [Roughness scoring](../roughness-scoring.md)
 - [Ring scoring](../ring-scoring.md)
 - [Signal quality confidence](../signal-quality-confidence.md)

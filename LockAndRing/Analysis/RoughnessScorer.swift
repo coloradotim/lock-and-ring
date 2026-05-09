@@ -12,7 +12,7 @@ struct RoughnessScorer {
         minimumFrequency: Double = 80,
         maximumFrequency: Double = 5_000,
         minimumMagnitude: Double = 0.08,
-        normalizationGain: Double = 0.18
+        normalizationGain: Double = 2.2
     ) {
         self.maxPartials = maxPartials
         self.minimumFrequency = minimumFrequency
