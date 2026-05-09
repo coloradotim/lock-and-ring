@@ -3,7 +3,10 @@
 ## Lock
 
 Lock describes how organized and stable the chord appears harmonically. Higher
-usually means the ensemble sound is more aligned.
+usually means the ensemble sound is more aligned. The first-pass scorer looks
+for simple frequency ratios, harmonic organization, low roughness, and stable
+spectral peaks. It is best used as a relative rehearsal trend, not as proof that
+a specific voice is in or out of tune.
 
 ## Ring
 
@@ -17,7 +20,10 @@ usually smoother and more useful musically.
 
 ## Stability
 
-Stability describes whether the sound stays organized over time.
+Stability describes whether the sound stays organized over time. It tracks
+whether spectral peaks persist, whether those peaks drift, and whether the
+energy distribution changes from frame to frame. A stable-but-detuned chord may
+still score well on Stability while scoring lower on Lock.
 
 ## Confidence
 
