@@ -9,6 +9,10 @@ Recommended workflow:
 3. Record Take 2.
 4. Read the headline and metric deltas.
 
+After recording a short sustained chord, open **Analyze Chord** on that take to
+see Chord Lab timing: consonant/onset duration, analyzable vowel start, time to
+lock, time to ring, best lock, and best ring.
+
 The comparison language treats lower Roughness as a musical improvement, even
 though the raw roughness score decreases. Higher Lock, Ring, and Stability are
 usually better.
