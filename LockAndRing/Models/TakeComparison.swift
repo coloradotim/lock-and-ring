@@ -46,6 +46,7 @@ struct RecordedTake: Identifiable, Equatable, Sendable {
     let frames: [AnalysisFrame]
     let source: TakeSource
     let audioClip: OfflineAudioClip?
+    var regions: [TakeRegion]
 
     init(
         id: UUID = UUID(),
@@ -55,7 +56,8 @@ struct RecordedTake: Identifiable, Equatable, Sendable {
         endedAt: Date,
         frames: [AnalysisFrame],
         source: TakeSource = .recorded,
-        audioClip: OfflineAudioClip? = nil
+        audioClip: OfflineAudioClip? = nil,
+        regions: [TakeRegion] = []
     ) {
         self.id = id
         self.slot = slot
@@ -65,6 +67,7 @@ struct RecordedTake: Identifiable, Equatable, Sendable {
         self.frames = frames
         self.source = source
         self.audioClip = audioClip
+        self.regions = regions
     }
 
     var duration: TimeInterval {
@@ -101,6 +104,76 @@ struct RecordedTake: Identifiable, Equatable, Sendable {
 
             return abs(leftOffset - clampedTime) < abs(rightOffset - clampedTime)
         }
+    }
+
+    var wholeTakeRegion: TakeRegion {
+        TakeRegion(name: "Whole take", startTime: 0, endTime: duration)
+    }
+
+    func scoped(to region: TakeRegion?) -> RecordedTake {
+        guard let region, let clampedRegion = region.clamped(to: duration), clampedRegion.isValid else {
+            return self
+        }
+
+        let scopedStart = startedAt.addingTimeInterval(clampedRegion.startTime)
+        let scopedEnd = startedAt.addingTimeInterval(clampedRegion.endTime)
+        let scopedFrames = frames.filter { frame in
+            let offset = frame.timestamp.timeIntervalSince(startedAt)
+            return offset >= clampedRegion.startTime && offset <= clampedRegion.endTime
+        }
+
+        return RecordedTake(
+            id: id,
+            slot: slot,
+            name: clampedRegion.name ?? name,
+            startedAt: scopedStart,
+            endedAt: scopedEnd,
+            frames: scopedFrames.isEmpty ? frames : scopedFrames,
+            source: source,
+            audioClip: audioClip,
+            regions: regions
+        )
+    }
+}
+
+struct TakeRegion: Codable, Identifiable, Equatable, Sendable {
+    let id: UUID
+    var name: String?
+    var startTime: TimeInterval
+    var endTime: TimeInterval
+
+    init(
+        id: UUID = UUID(),
+        name: String? = nil,
+        startTime: TimeInterval,
+        endTime: TimeInterval
+    ) {
+        self.id = id
+        self.name = name
+        self.startTime = startTime
+        self.endTime = endTime
+    }
+
+    var duration: TimeInterval {
+        max(endTime - startTime, 0)
+    }
+
+    var isValid: Bool {
+        startTime >= 0 && endTime > startTime
+    }
+
+    func clamped(to takeDuration: TimeInterval) -> TakeRegion? {
+        guard takeDuration > 0 else {
+            return nil
+        }
+
+        let start = min(max(startTime, 0), takeDuration)
+        let end = min(max(endTime, start), takeDuration)
+        guard end > start else {
+            return nil
+        }
+
+        return TakeRegion(id: id, name: name, startTime: start, endTime: end)
     }
 }
 

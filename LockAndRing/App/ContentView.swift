@@ -161,18 +161,32 @@ struct ContentView: View {
             )
 
             if let take = viewModel.currentTake {
+                let analysisTake = viewModel.currentAnalysisTake ?? take
                 TakeReviewDashboard(
-                    take: take,
-                    displayState: displayState(for: take),
-                    frame: take.analysisFrame,
+                    take: analysisTake,
+                    sourceTake: take,
+                    displayState: displayState(for: analysisTake),
+                    frame: analysisTake.analysisFrame,
                     playback: viewModel.currentTakePlayback,
                     canCompare: viewModel.canCompareCurrentTake,
+                    draftRegion: viewModel.draftRegion,
+                    analysisRegion: viewModel.analysisRegion,
+                    savedRegions: take.regions,
                     liveInputFrame: viewModel.inputManager.latestFrame,
                     liveInputState: viewModel.inputManager.state,
                     isDebugExpanded: $isDebugExpanded,
                     isVisualEvidenceExpanded: $isVisualEvidenceExpanded,
                     onPlaybackToggle: viewModel.toggleCurrentTakePlayback,
                     onPlaybackScrub: viewModel.scrubCurrentTakePlayback,
+                    onRegionStartChange: viewModel.updateRegionStart,
+                    onRegionEndChange: viewModel.updateRegionEnd,
+                    onAnalyzeRegion: viewModel.analyzeDraftRegion,
+                    onClearRegion: viewModel.clearRegionSelection,
+                    onSaveRegion: viewModel.saveDraftRegion,
+                    onSelectRegion: viewModel.selectRegion,
+                    onPlayRegion: { viewModel.playCurrentTake(region: viewModel.draftRegion, loop: false) },
+                    onLoopRegion: { viewModel.playCurrentTake(region: viewModel.draftRegion, loop: true) },
+                    onStopRegionPlayback: viewModel.stopRegionPlayback,
                     onSave: viewModel.saveCurrentTake,
                     onCompare: viewModel.compareCurrentTake,
                     onRecordAgain: viewModel.startPrimaryTakeRecording,
@@ -203,6 +217,30 @@ struct ContentView: View {
                         takeB: currentTake
                     )
                 )
+
+                HStack(spacing: 10) {
+                    Button {
+                        viewModel.playReferenceTake()
+                    } label: {
+                        Label("Play Reference", systemImage: "play.circle")
+                    }
+
+                    Button {
+                        viewModel.playCurrentTake(
+                            region: viewModel.analysisRegion ?? viewModel.selectedRegion,
+                            loop: false
+                        )
+                    } label: {
+                        Label("Play Current", systemImage: "play.fill")
+                    }
+
+                    Button {
+                        viewModel.stopAuditionPlayback()
+                    } label: {
+                        Label("Stop", systemImage: "stop.fill")
+                    }
+                }
+                .controlSize(.large)
             }
 
             HStack(spacing: 10) {

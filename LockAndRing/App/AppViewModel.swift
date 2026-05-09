@@ -11,6 +11,10 @@ final class AppViewModel {
     var takeLibrary: SavedTakeLibrary
     var workflowState: MainWorkflowState = .ready
     var currentTake: RecordedTake?
+    var selectedRegion: TakeRegion?
+    var analysisRegion: TakeRegion?
+    var regionDraftStart: TimeInterval = 0
+    var regionDraftEnd: TimeInterval = 0
     var savedTake: RecordedTake?
     var savedTakes: [SavedTake]
     var libraryErrorMessage: String?
@@ -20,6 +24,7 @@ final class AppViewModel {
     var currentTakePlayback = TakePlaybackState()
     private var takePlaybackTask: Task<Void, Never>?
     var audioPlayer: AVAudioPlayer?
+    var temporaryPlaybackURL: URL?
     var currentTakePlayer: AVAudioPlayer?
     var currentTakePlaybackURL: URL?
     var currentTakePlaybackTask: Task<Void, Never>?
@@ -64,6 +69,7 @@ final class AppViewModel {
         takePlaybackTask = nil
         audioPlayer?.stop()
         audioPlayer = nil
+        cleanupTemporaryPlaybackFile()
         stopCurrentTakePlayback(resetTime: false, restartInput: false)
         cleanupCurrentTakePlaybackFile()
         inputManager.stop()
@@ -136,6 +142,91 @@ final class AppViewModel {
         )
     }
 
+    var currentAnalysisTake: RecordedTake? {
+        currentTake?.scoped(to: analysisRegion)
+    }
+
+    var draftRegion: TakeRegion? {
+        guard let currentTake else {
+            return nil
+        }
+
+        let region = TakeRegion(
+            name: nil,
+            startTime: regionDraftStart,
+            endTime: regionDraftEnd
+        )
+        return region.clamped(to: currentTake.duration)
+    }
+
+    func updateRegionStart(_ progress: Double) {
+        guard let currentTake else {
+            return
+        }
+
+        let time = min(max(progress, 0), 1) * currentTake.duration
+        regionDraftStart = min(time, max(regionDraftEnd - 0.1, 0))
+        stopCurrentTakePlayback(resetTime: false, restartInput: false)
+    }
+
+    func updateRegionEnd(_ progress: Double) {
+        guard let currentTake else {
+            return
+        }
+
+        let time = min(max(progress, 0), 1) * currentTake.duration
+        regionDraftEnd = max(time, min(regionDraftStart + 0.1, currentTake.duration))
+        stopCurrentTakePlayback(resetTime: false, restartInput: false)
+    }
+
+    func analyzeDraftRegion() {
+        analysisRegion = draftRegion
+    }
+
+    func clearRegionSelection() {
+        guard let currentTake else {
+            return
+        }
+
+        selectedRegion = nil
+        analysisRegion = nil
+        regionDraftStart = 0
+        regionDraftEnd = currentTake.duration
+        stopCurrentTakePlayback(resetTime: false, restartInput: false)
+    }
+
+    func saveDraftRegion() {
+        guard var currentTake, let region = draftRegion else {
+            return
+        }
+
+        let namedRegion = TakeRegion(
+            id: region.id,
+            name: "Region \(currentTake.regions.count + 1)",
+            startTime: region.startTime,
+            endTime: region.endTime
+        )
+        currentTake.regions.append(namedRegion)
+        self.currentTake = currentTake
+        selectedRegion = namedRegion
+        analysisRegion = namedRegion
+        regionDraftStart = namedRegion.startTime
+        regionDraftEnd = namedRegion.endTime
+    }
+
+    func selectRegion(_ region: TakeRegion?) {
+        guard let currentTake else {
+            return
+        }
+
+        let region = region ?? currentTake.wholeTakeRegion
+        selectedRegion = region.name == "Whole take" ? nil : region
+        analysisRegion = selectedRegion
+        regionDraftStart = region.startTime
+        regionDraftEnd = region.endTime
+        stopCurrentTakePlayback(resetTime: false, restartInput: false)
+    }
+
     var micSetupReadiness: MicSetupReadinessDisplayState {
         MicSetupReadinessDisplayState(
             inputName: inputManager.selectedInputName,
@@ -186,6 +277,8 @@ final class AppViewModel {
     func playSavedTake(_ savedTake: SavedTake) {
         do {
             let clip = try takeLibrary.audioClip(for: savedTake)
+            audioPlayer?.stop()
+            cleanupTemporaryPlaybackFile()
             audioPlayer = try AVAudioPlayer(contentsOf: savedTake.audioURL)
             audioPlayer?.play()
             replay(clip: clip)
@@ -198,7 +291,12 @@ final class AppViewModel {
         do {
             let clip = try takeLibrary.audioClip(for: savedTake)
             replaceCurrentTake(
-                analyzedTake(from: clip, name: savedTake.name, source: savedTake.source)
+                analyzedTake(
+                    from: clip,
+                    name: savedTake.name,
+                    source: savedTake.source,
+                    regions: savedTake.regions
+                )
             )
             workflowState = currentTake == nil ? .ready : .reviewingTake
         } catch {
@@ -209,7 +307,12 @@ final class AppViewModel {
     func useSavedTakeForComparison(_ savedTake: SavedTake) {
         do {
             let clip = try takeLibrary.audioClip(for: savedTake)
-            self.savedTake = analyzedTake(from: clip, name: savedTake.name, source: savedTake.source)
+            self.savedTake = analyzedTake(
+                from: clip,
+                name: savedTake.name,
+                source: savedTake.source,
+                regions: savedTake.regions
+            )
         } catch {
             libraryErrorMessage = error.localizedDescription
         }
@@ -251,7 +354,8 @@ final class AppViewModel {
     private func analyzedTake(
         from clip: OfflineAudioClip,
         name: String? = nil,
-        source: TakeSource = .imported
+        source: TakeSource = .imported,
+        regions: [TakeRegion] = []
     ) -> RecordedTake? {
         let startedAt = Date()
         let frameDuration = Double(offlineFrameSize) / clip.sampleRate
@@ -280,7 +384,8 @@ final class AppViewModel {
             endedAt: startedAt.addingTimeInterval(clip.duration),
             frames: frames,
             source: source,
-            audioClip: clip
+            audioClip: clip,
+            regions: regions
         )
     }
 

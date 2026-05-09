@@ -2,16 +2,29 @@ import SwiftUI
 
 struct TakeReviewDashboard: View {
     let take: RecordedTake
+    let sourceTake: RecordedTake
     let displayState: LiveAnalysisDisplayState
     let frame: AnalysisFrame
     let playback: TakePlaybackState
     let canCompare: Bool
+    let draftRegion: TakeRegion?
+    let analysisRegion: TakeRegion?
+    let savedRegions: [TakeRegion]
     let liveInputFrame: AudioInputFrame?
     let liveInputState: AudioInputState
     @Binding var isDebugExpanded: Bool
     @Binding var isVisualEvidenceExpanded: Bool
     let onPlaybackToggle: () -> Void
     let onPlaybackScrub: (Double) -> Void
+    let onRegionStartChange: (Double) -> Void
+    let onRegionEndChange: (Double) -> Void
+    let onAnalyzeRegion: () -> Void
+    let onClearRegion: () -> Void
+    let onSaveRegion: () -> Void
+    let onSelectRegion: (TakeRegion?) -> Void
+    let onPlayRegion: () -> Void
+    let onLoopRegion: () -> Void
+    let onStopRegionPlayback: () -> Void
     let onSave: () -> Void
     let onCompare: () -> Void
     let onRecordAgain: () -> Void
@@ -42,6 +55,23 @@ struct TakeReviewDashboard: View {
                     }
                 )
             }
+
+            RegionSelectionPanel(
+                take: sourceTake,
+                draftRegion: draftRegion,
+                analysisRegion: analysisRegion,
+                savedRegions: savedRegions,
+                playback: playback,
+                onRegionStartChange: onRegionStartChange,
+                onRegionEndChange: onRegionEndChange,
+                onAnalyzeRegion: onAnalyzeRegion,
+                onClearRegion: onClearRegion,
+                onSaveRegion: onSaveRegion,
+                onSelectRegion: onSelectRegion,
+                onPlayRegion: onPlayRegion,
+                onLoopRegion: onLoopRegion,
+                onStopRegionPlayback: onStopRegionPlayback
+            )
 
             TakeQualityGridPanel(metrics: displayState.metricStates)
 

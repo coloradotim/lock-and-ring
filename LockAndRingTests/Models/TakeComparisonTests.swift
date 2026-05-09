@@ -148,6 +148,38 @@ final class TakeComparisonTests: XCTestCase {
         XCTAssertEqual(take.frame(at: 2.0)?.meters.lock.score.value, 0.9)
     }
 
+    func testTakeRegionValidationAndClamping() {
+        let invalid = TakeRegion(startTime: 2, endTime: 1)
+        let overflowing = TakeRegion(name: "Tag", startTime: -1, endTime: 12)
+
+        XCTAssertFalse(invalid.isValid)
+        XCTAssertNil(invalid.clamped(to: 10))
+        XCTAssertEqual(
+            overflowing.clamped(to: 10),
+            TakeRegion(id: overflowing.id, name: "Tag", startTime: 0, endTime: 10)
+        )
+    }
+
+    func testScopedTakeUsesSelectedRegionFrames() {
+        let region = TakeRegion(name: "Middle", startTime: 0.8, endTime: 1.4)
+        let take = take(
+            slot: .takeA,
+            duration: 2,
+            frames: [
+                frame(time: 0, lock: 0.2, ring: 0.2, roughness: 0.2, stability: 0.2),
+                frame(time: 1.0, lock: 0.7, ring: 0.7, roughness: 0.2, stability: 0.7),
+                frame(time: 1.8, lock: 0.9, ring: 0.9, roughness: 0.2, stability: 0.9)
+            ]
+        )
+
+        let scoped = take.scoped(to: region)
+
+        XCTAssertEqual(scoped.name, "Middle")
+        XCTAssertEqual(scoped.duration, 0.6, accuracy: 0.0001)
+        XCTAssertEqual(scoped.frames.count, 1)
+        XCTAssertEqual(scoped.summary.averageLock, 0.7, accuracy: 0.0001)
+    }
+
     func testPlaybackStateReportsProgress() {
         let state = TakePlaybackState(
             duration: 10,
@@ -157,6 +189,22 @@ final class TakeComparisonTests: XCTestCase {
         )
 
         XCTAssertEqual(state.progress, 0.25, accuracy: 0.0001)
+    }
+
+    func testPlaybackStateReportsLoopRange() {
+        let state = TakePlaybackState(
+            duration: 10,
+            currentTime: 3,
+            isPlaying: true,
+            isAvailable: true,
+            isLooping: true,
+            rangeStart: 2,
+            rangeEnd: 5
+        )
+
+        XCTAssertTrue(state.isLooping)
+        XCTAssertEqual(state.rangeStart, 2)
+        XCTAssertEqual(state.rangeEnd, 5)
     }
 
     private func take(
