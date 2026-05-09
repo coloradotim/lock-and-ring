@@ -285,16 +285,6 @@ struct ChordLabAnalyzer {
     }
 }
 
-private struct ChordLabEventSamples {
-    let soundOnset: ChordLabFrameSample?
-    let vowelStart: ChordLabFrameSample?
-    let stability: ChordLabFrameSample?
-    let lock: ChordLabFrameSample?
-    let ring: ChordLabFrameSample?
-    let bestLock: ChordLabMetricPeak?
-    let bestRing: ChordLabMetricPeak?
-}
-
 struct ChordLabAnalysis: Equatable, Sendable {
     let summary: ChordTimingSummary
     let timelineSegments: [ChordTimelineSegment]
@@ -504,15 +494,5 @@ struct ChordLabThresholds: Equatable, Sendable {
         self.ringScore = ringScore
         self.maximumRoughnessForLock = maximumRoughnessForLock
         self.maximumRoughnessForRing = maximumRoughnessForRing
-    }
-}
-
-private struct ChordLabFrameSample {
-    let index: Int
-    let time: TimeInterval
-    let frame: AnalysisFrame
-
-    var averageConfidence: Double {
-        frame.meters.averageConfidence
     }
 }
