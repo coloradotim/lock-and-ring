@@ -150,8 +150,14 @@ Ring:
 
 Lock and Stability:
 
-- currently represented by placeholder snapshots
-- should implement this contract before becoming visible coaching signals
+- Lock is a first-pass simple-ratio and harmonic-organization scorer. It combines harmonic fit, simple ratio fit,
+  low-roughness contribution, and spectral stability contribution.
+- Stability is a first-pass spectral persistence scorer. It compares peak persistence, peak drift in cents, and
+  frame-to-frame energy distribution change.
+- `CompositeAnalysisScorer` owns per-frame coordination for Spectrum, Roughness, Ring, Lock, Stability, and the
+  signal quality confidence gate so app view models do not hand-wire metric-specific scoring.
+- Lock and Stability are provisional rehearsal trend signals. They are intended for relative comparison over time, not
+  for definitive tuning diagnosis or individual singer attribution.
 
 ## Future Support
 

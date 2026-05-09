@@ -10,10 +10,7 @@ final class AppViewModel {
     var meterHistory: [MeterSnapshot]
     var latestAnalysisInputFrame: AudioInputFrame?
     private var takePlaybackTask: Task<Void, Never>?
-    private let spectrumAnalyzer: SpectrumAnalyzer
-    private let roughnessScorer: RoughnessScorer
-    private let ringScorer: RingScorer
-    private var signalQualityAnalyzer: SignalQualityAnalyzer
+    private var analysisScorer: CompositeAnalysisScorer
 
     init(
         inputManager: AudioInputManager? = nil,
@@ -26,10 +23,7 @@ final class AppViewModel {
         self.currentFrame = currentFrame
         self.takeRecorder = takeRecorder ?? TakeRecorder()
         self.meterHistory = [currentFrame.meters]
-        self.spectrumAnalyzer = SpectrumAnalyzer()
-        self.roughnessScorer = RoughnessScorer()
-        self.ringScorer = RingScorer()
-        self.signalQualityAnalyzer = SignalQualityAnalyzer()
+        self.analysisScorer = CompositeAnalysisScorer()
         self.inputManager.onFrame = { [weak self] frame in
             self?.analyze(frame)
         }
@@ -97,27 +91,17 @@ final class AppViewModel {
     }
 
     private func analyze(_ frame: AudioInputFrame) {
-        let spectrum = spectrumAnalyzer.analyze(
-            samples: frame.monoSamples,
-            sampleRate: frame.sampleRate
-        )
-        let roughness = roughnessScorer.score(spectrum: spectrum)
-        let ring = ringScorer.score(spectrum: spectrum)
-        let signalQuality = signalQualityAnalyzer.analyze(frame: frame, spectrum: spectrum)
-        let meters = currentFrame.meters
-            .replacingRoughness(with: roughness.metricSnapshot())
-            .replacingRing(with: ring.metricSnapshot())
-            .applyingSignalQuality(signalQuality)
+        let result = analysisScorer.score(frame: frame)
         let analyzedFrame = AnalysisFrame(
             timestamp: Date(),
-            meters: meters,
-            spectrum: spectrum,
-            spectrogram: currentFrame.spectrogram.appending(spectrum),
-            ringHistory: currentFrame.ringHistory.appending(ring)
+            meters: result.meters,
+            spectrum: result.spectrum,
+            spectrogram: currentFrame.spectrogram.appending(result.spectrum),
+            ringHistory: currentFrame.ringHistory.appending(result.ring)
         )
         currentFrame = analyzedFrame
         latestAnalysisInputFrame = frame
-        meterHistory = Array((meterHistory + [meters]).suffix(64))
+        meterHistory = Array((meterHistory + [result.meters]).suffix(64))
         takeRecorder.record(analyzedFrame)
     }
 }
