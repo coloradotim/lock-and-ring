@@ -22,8 +22,14 @@ struct ChordLabView: View {
     @ViewBuilder
     private var content: some View {
         if let analysis, analysis.summary.soundOnsetTime != nil {
+            let displayState = ChordTimingDisplayState(analysis: analysis)
+
             VStack(alignment: .leading, spacing: 12) {
-                if let warning = ChordTimingDisplayState(analysis: analysis).warningMessage {
+                Text(displayState.lockSummary)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.primary)
+
+                if let warning = displayState.warningMessage {
                     Text(warning)
                         .font(.caption)
                         .foregroundStyle(.orange)
@@ -46,6 +52,8 @@ private struct ChordLabSummaryGrid: View {
     var body: some View {
         Grid(alignment: .leading, horizontalSpacing: 14, verticalSpacing: 6) {
             row("Consonants/onset", seconds(summary.consonantOnsetDuration))
+            row("Vowel start", seconds(summary.analyzableVowelStartTime))
+            row("Vowel to stable", seconds(summary.timeFromVowelToStability))
             row("Vowel to lock", seconds(summary.timeFromVowelToLock))
             row("Vowel to ring", seconds(summary.timeFromVowelToRing))
             row("Best lock", peak(score: summary.bestLockScore, time: summary.bestLockTime))

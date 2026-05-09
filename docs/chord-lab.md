@@ -10,6 +10,16 @@ does not try to analyze a full phrase, identify the chord name, read notation, o
 
 This should be presented as a section inside Take Analysis, not as a separate user-facing lab or destination.
 
+## Take Analysis Workflow
+
+After a recorded or imported take is analyzed, Take Analysis includes a **Timing / Chord Behavior** section. The section
+starts with plain rehearsal language, such as whether the chord locked quickly, locked without developing strong ring, or
+did not lock. It then shows the timing metrics, compact timeline, event markers, and any confidence warning for the same
+take.
+
+Timing and chord-behavior results are not a separate top-level mode. They are part of the post-take review flow alongside
+save, compare, try-again, and discard actions.
+
 ## Timing Summary
 
 Chord timing reports:
