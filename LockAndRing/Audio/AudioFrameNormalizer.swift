@@ -60,7 +60,7 @@ enum AudioFrameNormalizer {
                 channelClipping: channelClipping,
                 hasChannelImbalance: hasChannelImbalance(channelRMS),
                 noiseFloor: noiseFloor,
-                hasSignal: rmsLevel > max(noiseFloor * 2, 0.01)
+                hasSignal: rmsLevel > 0.01
             )
         )
     }
