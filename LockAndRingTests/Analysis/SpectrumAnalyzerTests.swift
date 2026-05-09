@@ -5,10 +5,10 @@ final class SpectrumAnalyzerTests: XCTestCase {
     func testPlaceholderFrameHasExpectedMeterShape() {
         let frame = SpectrumAnalyzer().analyzePlaceholderFrame()
 
-        XCTAssertEqual(frame.meters.lock.value, 0)
-        XCTAssertEqual(frame.meters.ring.value, 0)
-        XCTAssertEqual(frame.meters.roughness.value, 0)
-        XCTAssertEqual(frame.meters.stability.value, 0)
+        XCTAssertEqual(frame.meters.lock.score.value, 0)
+        XCTAssertEqual(frame.meters.ring.score.value, 0)
+        XCTAssertEqual(frame.meters.roughness.score.value, 0)
+        XCTAssertEqual(frame.meters.stability.score.value, 0)
     }
 
     func testPureSineWaveProducesStablePeakNearFrequency() {

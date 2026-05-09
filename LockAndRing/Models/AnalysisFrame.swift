@@ -10,10 +10,10 @@ struct AnalysisFrame: Equatable, Sendable {
     static let placeholder = AnalysisFrame(
         timestamp: Date(timeIntervalSince1970: 0),
         meters: MeterSnapshot(
-            lock: MetricScore(value: 0),
-            ring: MetricScore(value: 0),
-            roughness: MetricScore(value: 0),
-            stability: MetricScore(value: 0)
+            lock: .placeholder(kind: .lock),
+            ring: .placeholder(kind: .ring),
+            roughness: .placeholder(kind: .roughness),
+            stability: .placeholder(kind: .stability)
         ),
         spectrum: SpectrumSnapshot.placeholder,
         spectrogram: .placeholder,

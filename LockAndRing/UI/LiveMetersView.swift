@@ -15,7 +15,7 @@ struct LiveMetersView: View {
 
 private struct MeterRow: View {
     let title: String
-    let score: MetricScore
+    let score: MetricSnapshot
 
     var body: some View {
         GridRow {
@@ -23,11 +23,11 @@ private struct MeterRow: View {
                 .font(.headline)
                 .frame(width: 90, alignment: .leading)
 
-            ProgressView(value: score.value)
+            ProgressView(value: score.score.value)
                 .progressViewStyle(.linear)
                 .frame(minWidth: 420)
 
-            Text(score.value, format: .percent.precision(.fractionLength(0)))
+            Text(score.score.value, format: .percent.precision(.fractionLength(0)))
                 .monospacedDigit()
                 .foregroundStyle(.secondary)
                 .frame(width: 52, alignment: .trailing)

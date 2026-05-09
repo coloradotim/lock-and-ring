@@ -53,11 +53,27 @@ final class AppViewModel {
         currentFrame = AnalysisFrame(
             timestamp: Date(),
             meters: currentFrame.meters
-                .replacingRoughness(with: roughness.value)
-                .replacingRing(with: ring.value),
+                .replacingRoughness(with: roughness.metricSnapshot(signalQuality: signalQuality(for: frame)))
+                .replacingRing(with: ring.metricSnapshot(signalQuality: signalQuality(for: frame))),
             spectrum: spectrum,
             spectrogram: currentFrame.spectrogram.appending(spectrum),
             ringHistory: currentFrame.ringHistory.appending(ring)
         )
+    }
+
+    private func signalQuality(for frame: AudioInputFrame) -> SignalQualityState {
+        if frame.instrumentation.isClipping {
+            return .clipping
+        }
+
+        if frame.instrumentation.hasChannelImbalance {
+            return .imbalanced
+        }
+
+        if !frame.instrumentation.hasSignal {
+            return .lowSignal
+        }
+
+        return .nominal
     }
 }

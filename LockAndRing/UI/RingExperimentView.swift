@@ -55,8 +55,8 @@ struct RingExperimentView: View {
 
     private var ringRoughnessPlot: some View {
         Canvas { context, size in
-            let xPosition = size.width * meters.roughness.value
-            let yPosition = size.height * (1 - meters.ring.value)
+            let xPosition = size.width * meters.roughness.score.value
+            let yPosition = size.height * (1 - meters.ring.score.value)
             let rect = CGRect(x: xPosition - 4, y: yPosition - 4, width: 8, height: 8)
 
             context.stroke(

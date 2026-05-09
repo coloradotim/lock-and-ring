@@ -66,6 +66,17 @@ final class RingScorerTests: XCTestCase {
         XCTAssertGreaterThanOrEqual(score.matchedHarmonics, 4)
     }
 
+    func testRingScoreExportsMetricSnapshot() {
+        let score = scorer.score(partials: reinforcedHarmonicStack(root: 220))
+        let snapshot = score.metricSnapshot(signalQuality: .nominal)
+
+        XCTAssertEqual(snapshot.kind, .ring)
+        XCTAssertEqual(snapshot.score.value, score.value)
+        XCTAssertEqual(snapshot.confidence.value, score.confidence)
+        XCTAssertEqual(snapshot.signalQuality, .nominal)
+        XCTAssertEqual(snapshot.rawMeasurements["matchedHarmonics"], Double(score.matchedHarmonics))
+    }
+
     func testNoReliableAnchorReturnsLowConfidence() {
         let score = scorer.score(
             partials: [
