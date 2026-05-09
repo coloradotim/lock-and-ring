@@ -63,6 +63,29 @@ final class ChordLabAnalysisTests: XCTestCase {
         XCTAssertEqual(try XCTUnwrap(analysis.summary.bestRingTime), 0.2, accuracy: 0.001)
     }
 
+    func testBestLockIgnoresPreVowelOnsetArtifact() throws {
+        let analysis = analyzer.analyze(frames: [
+            frame(time: 0.0, confidence: 0.2, lock: 0.96, ring: 0.2, roughness: 0.2, stability: 0.2),
+            frame(time: 0.1, confidence: 0.3, lock: 0.92, ring: 0.2, roughness: 0.2, stability: 0.2),
+            frame(time: 0.2, confidence: 0.7, lock: 0.35, ring: 0.2, roughness: 0.3, stability: 0.55),
+            frame(time: 0.3, confidence: 0.7, lock: 0.5, ring: 0.25, roughness: 0.3, stability: 0.7),
+            frame(time: 0.4, confidence: 0.7, lock: 0.64, ring: 0.35, roughness: 0.3, stability: 0.7)
+        ])
+
+        XCTAssertEqual(try XCTUnwrap(analysis.summary.analyzableVowelStartTime), 0.2, accuracy: 0.001)
+        XCTAssertEqual(try XCTUnwrap(analysis.summary.bestLockScore), 0.64, accuracy: 0.001)
+        XCTAssertEqual(try XCTUnwrap(analysis.summary.bestLockTime), 0.4, accuracy: 0.001)
+    }
+
+    func testTimelinePaletteUsesDistinctStableLockedAndRingingColors() {
+        XCTAssertEqual(
+            Set(ChordTimelineSegmentKind.legendOrder.map(\.paletteToken)).count,
+            ChordTimelineSegmentKind.legendOrder.count
+        )
+        XCTAssertNotEqual(ChordTimelineSegmentKind.stable.paletteToken, ChordTimelineSegmentKind.locked.paletteToken)
+        XCTAssertNotEqual(ChordTimelineSegmentKind.locked.paletteToken, ChordTimelineSegmentKind.ringing.paletteToken)
+    }
+
     func testTimelineSegmentsAreChronological() {
         let analysis = analyzer.analyze(frames: [
             frame(time: 0, confidence: 0.05),

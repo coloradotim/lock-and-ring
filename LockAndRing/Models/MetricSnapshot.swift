@@ -57,7 +57,7 @@ struct MetricFactor: Equatable, Sendable {
     }
 }
 
-enum SignalQualityState: Equatable, Sendable {
+enum SignalQualityState: Equatable, Hashable, Sendable {
     case nominal
     case lowSignal
     case clipping

@@ -63,6 +63,10 @@ struct TakeReviewDashboard: View {
 
             LiveInputMonitorPanel(frame: liveInputFrame, state: liveInputState)
 
+            if let diagnostics = take.audioClip?.diagnostics {
+                ImportDiagnosticsPanel(diagnostics: diagnostics)
+            }
+
             ExperimentalDebugPanel(
                 isExpanded: $isDebugExpanded,
                 frame: frame,
@@ -241,7 +245,7 @@ private struct TakeQualityTile: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
-                Text(metric.title)
+                Text("Whole-take \(metric.title)")
                     .font(.subheadline.weight(.semibold))
 
                 Spacer()
@@ -284,6 +288,49 @@ private struct PhrasePlaceholderPanel: View {
             }
             .font(.caption)
         }
+    }
+}
+
+private struct ImportDiagnosticsPanel: View {
+    let diagnostics: OfflineAudioImportDiagnostics
+
+    var body: some View {
+        RehearsalPanel(title: "Import Diagnostics") {
+            Grid(alignment: .leading, horizontalSpacing: 16, verticalSpacing: 8) {
+                diagnosticRow("Source", diagnostics.sourceType.title)
+                diagnosticRow("File type", diagnostics.fileType.uppercased())
+                diagnosticRow("Channels", diagnostics.channelCount.formatted())
+                diagnosticRow("Sample rate", formatSampleRate(diagnostics.analysisSampleRate))
+                diagnosticRow("Mono conversion", diagnostics.monoConversionBehavior)
+                diagnosticRow("Normalization", diagnostics.normalizationBehavior)
+                diagnosticRow("Peak level", diagnostics.peakLevel.formatted(.number.precision(.fractionLength(2))))
+                diagnosticRow(
+                    "Clipping frames",
+                    diagnostics.clippingRatio.formatted(.percent.precision(.fractionLength(0)))
+                )
+
+                if let stereoCorrelation = diagnostics.stereoCorrelation {
+                    diagnosticRow(
+                        "Stereo correlation",
+                        stereoCorrelation.formatted(.number.precision(.fractionLength(2)))
+                    )
+                }
+            }
+            .font(.caption)
+        }
+    }
+
+    private func diagnosticRow(_ label: String, _ value: String) -> some View {
+        GridRow {
+            Text(label)
+                .foregroundStyle(.secondary)
+            Text(value)
+                .monospacedDigit()
+        }
+    }
+
+    private func formatSampleRate(_ sampleRate: Double) -> String {
+        sampleRate.formatted(.number.precision(.fractionLength(0))) + " Hz"
     }
 }
 

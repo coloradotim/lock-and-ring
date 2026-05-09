@@ -56,8 +56,8 @@ private struct ChordLabSummaryGrid: View {
             row("Vowel to stable", seconds(summary.timeFromVowelToStability))
             row("Vowel to lock", seconds(summary.timeFromVowelToLock))
             row("Vowel to ring", seconds(summary.timeFromVowelToRing))
-            row("Best lock", peak(score: summary.bestLockScore, time: summary.bestLockTime))
-            row("Best ring", peak(score: summary.bestRingScore, time: summary.bestRingTime))
+            row("Best locked vowel", peak(score: summary.bestLockScore, time: summary.bestLockTime))
+            row("Best ringing vowel", peak(score: summary.bestRingScore, time: summary.bestRingTime))
             row("Held lock", seconds(summary.heldLockDuration))
             row("Held ring", seconds(summary.heldRingDuration))
             row("Main delay", summary.largestDelayContributor.title)
@@ -69,7 +69,7 @@ private struct ChordLabSummaryGrid: View {
         GridRow {
             Text(label)
                 .foregroundStyle(.secondary)
-                .frame(width: 118, alignment: .leading)
+                .frame(width: 138, alignment: .leading)
 
             Text(value)
                 .monospacedDigit()
@@ -153,20 +153,20 @@ private struct ChordTimelineView: View {
     }
 
     private func color(for kind: ChordTimelineSegmentKind) -> Color {
-        switch kind {
-        case .silence:
+        switch kind.paletteToken {
+        case .neutralGray:
             .gray
-        case .consonantOrOnset:
+        case .orange:
             .orange
-        case .searching:
+        case .amber:
             .yellow
-        case .stable:
-            .teal
-        case .locked:
+        case .blue:
+            .blue
+        case .green:
             .green
-        case .ringing:
-            .mint
-        case .lowConfidence:
+        case .purple:
+            .purple
+        case .red:
             .red
         }
     }
@@ -184,16 +184,4 @@ private struct ChordLabMarkerList: View {
         .font(.caption2)
         .foregroundStyle(.secondary)
     }
-}
-
-private extension ChordTimelineSegmentKind {
-    static let legendOrder: [ChordTimelineSegmentKind] = [
-        .silence,
-        .consonantOrOnset,
-        .searching,
-        .stable,
-        .locked,
-        .ringing,
-        .lowConfidence
-    ]
 }

@@ -112,6 +112,7 @@ final class AppViewModel {
         replaceCurrentTake(nil)
         takeRecorder.clear(slot: .takeA)
         workflowState = .ready
+        startAudio()
     }
 
     func reviewCurrentTake() {
@@ -124,6 +125,13 @@ final class AppViewModel {
 
     var canCompareCurrentTake: Bool {
         currentTake != nil && savedTake != nil && currentTake?.id != savedTake?.id
+    }
+
+    var recordingReadiness: RecordingReadiness {
+        RecordingReadiness(
+            inputState: inputManager.state,
+            hasKnownInput: !inputManager.devices.isEmpty
+        )
     }
 
     func importTake(from url: URL) {

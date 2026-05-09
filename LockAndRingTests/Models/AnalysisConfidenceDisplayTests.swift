@@ -46,6 +46,36 @@ final class AnalysisConfidenceDisplayTests: XCTestCase {
         XCTAssertEqual(state.lockSummary, "This take did not lock. Best lock: 61% at 0.00s.")
     }
 
+    func testShortLowConfidenceRegionDoesNotForceGlobalLowConfidence() {
+        let take = take(
+            frames: [
+                frame(time: 0, confidence: 0.9),
+                frame(time: 0.1, confidence: 0.9),
+                frame(time: 0.2, confidence: 0.2, signalQuality: .lowSignal),
+                frame(time: 0.3, confidence: 0.9)
+            ]
+        )
+        let state = TakeAnalysisDisplayState(take: take)
+
+        XCTAssertEqual(state.confidenceState, .reliable)
+        XCTAssertNil(state.warningMessage)
+    }
+
+    func testPersistentClippingProducesGlobalLowConfidenceReason() {
+        let take = take(
+            frames: [
+                frame(time: 0, confidence: 0.9, signalQuality: .clipping),
+                frame(time: 0.1, confidence: 0.9, signalQuality: .clipping),
+                frame(time: 0.2, confidence: 0.9),
+                frame(time: 0.3, confidence: 0.9)
+            ]
+        )
+        let state = TakeAnalysisDisplayState(take: take)
+
+        XCTAssertEqual(state.confidenceState, .lowConfidence(reason: .clipping))
+        XCTAssertTrue(state.warningMessage?.contains("input clipped") == true)
+    }
+
     func testLowConfidenceComparisonProducesWarning() {
         let comparison = TakeComparisonSummary(
             takeA: take(frames: [frame(time: 0, confidence: 0.9)]),
