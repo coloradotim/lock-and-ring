@@ -74,6 +74,20 @@ struct RecordedTake: Identifiable, Equatable, Sendable {
     var summary: TakeSummary {
         TakeSummary(take: self)
     }
+
+    var analysisFrame: AnalysisFrame {
+        guard let lastFrame = frames.last else {
+            return .placeholder
+        }
+
+        return AnalysisFrame(
+            timestamp: endedAt,
+            meters: MeterSnapshot.aggregate(from: frames.map(\.meters)),
+            spectrum: lastFrame.spectrum,
+            spectrogram: lastFrame.spectrogram,
+            ringHistory: lastFrame.ringHistory
+        )
+    }
 }
 
 struct TakeSummary: Equatable, Sendable {

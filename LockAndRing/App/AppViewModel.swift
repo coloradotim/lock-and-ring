@@ -16,8 +16,12 @@ final class AppViewModel {
     var libraryErrorMessage: String?
     var meterHistory: [MeterSnapshot]
     var latestAnalysisInputFrame: AudioInputFrame?
+    var currentTakePlayback = TakePlaybackState()
     private var takePlaybackTask: Task<Void, Never>?
     private var audioPlayer: AVAudioPlayer?
+    private var currentTakePlayer: AVAudioPlayer?
+    private var currentTakePlaybackURL: URL?
+    private var currentTakePlaybackTask: Task<Void, Never>?
     private var analysisScorer: CompositeAnalysisScorer
     private let offlineFrameSize = 2_048
 
@@ -59,6 +63,8 @@ final class AppViewModel {
         takePlaybackTask = nil
         audioPlayer?.stop()
         audioPlayer = nil
+        stopCurrentTakePlayback(resetTime: false, restartInput: false)
+        cleanupCurrentTakePlaybackFile()
         inputManager.stop()
     }
 
@@ -69,6 +75,7 @@ final class AppViewModel {
     func startTakeRecording(slot: TakeSlot = .takeA) {
         takePlaybackTask?.cancel()
         takePlaybackTask = nil
+        replaceCurrentTake(nil)
         startAudio()
         takeRecorder.startRecording(slot: slot)
         workflowState = .recording(startedAt: takeRecorder.recordingStartedAt ?? Date())
@@ -76,14 +83,14 @@ final class AppViewModel {
 
     func stopTakeRecording() {
         takeRecorder.finishRecording()
-        currentTake = takeRecorder.take(for: .takeA)
+        replaceCurrentTake(takeRecorder.take(for: .takeA))
         workflowState = currentTake == nil ? .ready : .reviewingTake
     }
 
     func clearTake(slot: TakeSlot) {
         takeRecorder.clear(slot: slot)
         if slot == .takeA {
-            currentTake = nil
+            replaceCurrentTake(nil)
         }
     }
 
@@ -102,7 +109,7 @@ final class AppViewModel {
     }
 
     func discardCurrentTake() {
-        currentTake = nil
+        replaceCurrentTake(nil)
         takeRecorder.clear(slot: .takeA)
         workflowState = .ready
     }
@@ -126,12 +133,12 @@ final class AppViewModel {
         offlineAnalyzer.importFile(from: url)
 
         guard let clip = offlineAnalyzer.clip else {
-            currentTake = nil
+            replaceCurrentTake(nil)
             workflowState = .ready
             return
         }
 
-        currentTake = analyzedTake(from: clip)
+        replaceCurrentTake(analyzedTake(from: clip))
         workflowState = currentTake == nil ? .ready : .reviewingTake
     }
 
@@ -167,11 +174,41 @@ final class AppViewModel {
     func analyzeSavedTake(_ savedTake: SavedTake) {
         do {
             let clip = try takeLibrary.audioClip(for: savedTake)
-            currentTake = analyzedTake(from: clip, name: savedTake.name, source: savedTake.source)
+            replaceCurrentTake(
+                analyzedTake(from: clip, name: savedTake.name, source: savedTake.source)
+            )
             workflowState = currentTake == nil ? .ready : .reviewingTake
         } catch {
             libraryErrorMessage = error.localizedDescription
         }
+    }
+
+    func toggleCurrentTakePlayback() {
+        guard let currentTakePlayer else {
+            return
+        }
+
+        if currentTakePlayer.isPlaying {
+            stopCurrentTakePlayback(resetTime: false, restartInput: true)
+        } else {
+            inputManager.stop()
+            audioPlayer?.stop()
+            if currentTakePlayer.currentTime >= currentTakePlayer.duration {
+                currentTakePlayer.currentTime = 0
+            }
+            currentTakePlayer.play()
+            currentTakePlayback.isPlaying = true
+            startCurrentTakeProgressLoop()
+        }
+    }
+
+    func scrubCurrentTakePlayback(to progress: Double) {
+        guard let currentTakePlayer else {
+            return
+        }
+
+        currentTakePlayer.currentTime = min(max(progress, 0), 1) * currentTakePlayer.duration
+        currentTakePlayback.currentTime = currentTakePlayer.currentTime
     }
 
     func useSavedTakeForComparison(_ savedTake: SavedTake) {
@@ -291,6 +328,100 @@ final class AppViewModel {
         }
     }
 
+    private func replaceCurrentTake(_ take: RecordedTake?) {
+        currentTake = take
+        prepareCurrentTakePlayback(for: take)
+    }
+
+    private func prepareCurrentTakePlayback(for take: RecordedTake?) {
+        stopCurrentTakePlayback(resetTime: true, restartInput: false)
+        cleanupCurrentTakePlaybackFile()
+        currentTakePlayback = TakePlaybackState()
+
+        guard let clip = take?.audioClip else {
+            return
+        }
+
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent("LockAndRing-\(take?.id.uuidString ?? UUID().uuidString).wav")
+
+        do {
+            try AudioClipFileStore.write(clip, to: url)
+            let player = try AVAudioPlayer(contentsOf: url)
+            player.prepareToPlay()
+            currentTakePlayer = player
+            currentTakePlaybackURL = url
+            currentTakePlayback = TakePlaybackState(
+                duration: player.duration,
+                currentTime: 0,
+                isPlaying: false,
+                isAvailable: true
+            )
+            libraryErrorMessage = nil
+        } catch {
+            currentTakePlayer = nil
+            currentTakePlaybackURL = nil
+            currentTakePlayback = TakePlaybackState()
+            libraryErrorMessage = error.localizedDescription
+        }
+    }
+
+    private func stopCurrentTakePlayback(resetTime: Bool, restartInput: Bool) {
+        currentTakePlaybackTask?.cancel()
+        currentTakePlaybackTask = nil
+        currentTakePlayer?.pause()
+
+        if resetTime {
+            currentTakePlayer?.currentTime = 0
+        }
+
+        currentTakePlayback.currentTime = currentTakePlayer?.currentTime ?? 0
+        currentTakePlayback.isPlaying = false
+
+        if restartInput {
+            startAudio()
+        }
+    }
+
+    private func startCurrentTakeProgressLoop() {
+        currentTakePlaybackTask?.cancel()
+        currentTakePlaybackTask = Task { [weak self] in
+            while !Task.isCancelled {
+                try? await Task.sleep(nanoseconds: 100_000_000)
+
+                let shouldContinue = await MainActor.run {
+                    guard let self, let player = self.currentTakePlayer else {
+                        return false
+                    }
+
+                    self.currentTakePlayback.currentTime = player.currentTime
+                    if !player.isPlaying {
+                        self.currentTakePlayback.isPlaying = false
+                        self.currentTakePlaybackTask = nil
+                        self.startAudio()
+                        return false
+                    }
+
+                    return true
+                }
+
+                if !shouldContinue {
+                    return
+                }
+            }
+        }
+    }
+
+    private func cleanupCurrentTakePlaybackFile() {
+        if let currentTakePlaybackURL {
+            try? FileManager.default.removeItem(at: currentTakePlaybackURL)
+        }
+
+        currentTakePlaybackURL = nil
+        currentTakePlayer = nil
+        currentTakePlayback = TakePlaybackState()
+    }
+
     private func reloadSavedTakes() {
         do {
             savedTakes = try takeLibrary.load()
@@ -315,5 +446,20 @@ final class AppViewModel {
         currentFrame = analyzedFrame
         latestAnalysisInputFrame = inputFrame
         meterHistory = Array((meterHistory + [analyzedFrame.meters]).suffix(64))
+    }
+}
+
+struct TakePlaybackState: Equatable {
+    var duration: Double = 0
+    var currentTime: Double = 0
+    var isPlaying = false
+    var isAvailable = false
+
+    var progress: Double {
+        guard duration > 0 else {
+            return 0
+        }
+
+        return min(max(currentTime / duration, 0), 1)
     }
 }

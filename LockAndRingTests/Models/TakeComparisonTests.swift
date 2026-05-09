@@ -114,6 +114,36 @@ final class TakeComparisonTests: XCTestCase {
         XCTAssertEqual(summary.stabilityDuration, 2, accuracy: 0.0001)
     }
 
+    func testRecordedTakeAnalysisFrameFreezesAggregateMetrics() {
+        let take = take(
+            slot: .takeA,
+            duration: 2,
+            frames: [
+                frame(lock: 0.2, ring: 0.4, roughness: 0.8, stability: 0.6),
+                frame(lock: 0.6, ring: 0.8, roughness: 0.2, stability: 0.9)
+            ]
+        )
+
+        let frozenFrame = take.analysisFrame
+
+        XCTAssertEqual(frozenFrame.meters.lock.score.value, 0.4, accuracy: 0.0001)
+        XCTAssertEqual(frozenFrame.meters.ring.score.value, 0.6, accuracy: 0.0001)
+        XCTAssertEqual(frozenFrame.meters.roughness.score.value, 0.5, accuracy: 0.0001)
+        XCTAssertEqual(frozenFrame.meters.stability.score.value, 0.75, accuracy: 0.0001)
+        XCTAssertEqual(frozenFrame.timestamp, take.endedAt)
+    }
+
+    func testPlaybackStateReportsProgress() {
+        let state = TakePlaybackState(
+            duration: 10,
+            currentTime: 2.5,
+            isPlaying: true,
+            isAvailable: true
+        )
+
+        XCTAssertEqual(state.progress, 0.25, accuracy: 0.0001)
+    }
+
     private func take(
         slot: TakeSlot,
         duration: TimeInterval,

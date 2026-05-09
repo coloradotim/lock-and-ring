@@ -1,19 +1,65 @@
 import SwiftUI
 
 struct SpectrogramView: View {
+    var title = "Spectrogram"
     let spectrogram: SpectrogramSnapshot
+    var duration: Double?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Spectrogram")
+            Text(title)
                 .font(.headline)
 
-            Canvas { context, size in
-                drawSpectrogram(context: context, size: size)
+            VStack(alignment: .leading, spacing: 6) {
+                HStack(alignment: .center, spacing: 8) {
+                    Text("Frequency (Hz)")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                        .rotationEffect(.degrees(-90))
+                        .fixedSize()
+                        .frame(width: 24, height: 180)
+
+                    VStack {
+                        Text("10k")
+                        Spacer()
+                        Text("5k")
+                        Spacer()
+                        Text("0")
+                    }
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .frame(width: 24, height: 180)
+
+                    Canvas { context, size in
+                        drawSpectrogram(context: context, size: size)
+                    }
+                    .frame(height: 180)
+                    .background(.black.opacity(0.72), in: RoundedRectangle(cornerRadius: 8))
+                }
+
+                HStack {
+                    Text("0s")
+                    Spacer()
+                    Text(endTimeLabel)
+                }
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+                .padding(.leading, 56)
+
+                Text("Time (s)")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .center)
             }
-            .frame(height: 180)
-            .background(.black.opacity(0.72), in: RoundedRectangle(cornerRadius: 8))
         }
+    }
+
+    private var endTimeLabel: String {
+        guard let duration else {
+            return "latest"
+        }
+
+        return duration.formatted(.number.precision(.fractionLength(1))) + "s"
     }
 
     private func drawSpectrogram(context: GraphicsContext, size: CGSize) {
@@ -25,10 +71,11 @@ struct SpectrogramView: View {
 
         for (rowOffset, row) in spectrogram.rows.enumerated() {
             let xPosition = size.width - Double(spectrogram.rows.count - rowOffset) * rowWidth
-            let binHeight = size.height / Double(max(row.count, 1))
+            let visibleBins = row.filter { $0.frequency >= minimumFrequency && $0.frequency <= maximumFrequency }
+            let binHeight = size.height / Double(max(visibleBins.count, 1))
 
-            for (binIndex, bin) in row.enumerated() where bin.magnitude > 0.03 {
-                let yPosition = size.height - Double(binIndex + 1) * binHeight
+            for bin in visibleBins where bin.magnitude > 0.03 {
+                let yPosition = size.height - yPosition(for: bin.frequency, height: size.height)
                 let rect = CGRect(
                     x: xPosition,
                     y: yPosition,
@@ -55,5 +102,18 @@ struct SpectrogramView: View {
         default:
             .blue.opacity(0.55)
         }
+    }
+
+    private var minimumFrequency: Double {
+        0
+    }
+
+    private var maximumFrequency: Double {
+        10_000
+    }
+
+    private func yPosition(for frequency: Double, height: Double) -> Double {
+        let clamped = min(max(frequency, minimumFrequency), maximumFrequency)
+        return height * clamped / maximumFrequency
     }
 }
