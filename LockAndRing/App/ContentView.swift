@@ -59,11 +59,18 @@ struct ContentView: View {
 
     private var readyView: some View {
         let recordingReadiness = viewModel.recordingReadiness
+        let micSetupReadiness = viewModel.micSetupReadiness
 
         return VStack(alignment: .leading, spacing: 16) {
             workflowHeader(
                 title: "Ready",
                 subtitle: "Record or import a take, then review what happened."
+            )
+
+            MicSetupReadinessPanel(
+                state: micSetupReadiness,
+                setupCheckResult: viewModel.micSetupCheckResult,
+                onCheck: viewModel.runMicSetupCheck
             )
 
             if let statusMessage = recordingReadiness.statusMessage {
@@ -121,7 +128,8 @@ struct ContentView: View {
 
             RecordingStatusPanel(
                 startedAt: startedAt,
-                signal: displayState.signal
+                signal: displayState.signal,
+                micSetup: viewModel.micSetupReadiness
             )
 
             Button {
@@ -253,6 +261,7 @@ struct ContentView: View {
 private struct RecordingStatusPanel: View {
     let startedAt: Date
     let signal: SignalQualityDisplayState
+    let micSetup: MicSetupReadinessDisplayState
 
     var body: some View {
         RehearsalPanel(title: "Recording") {
@@ -271,7 +280,84 @@ private struct RecordingStatusPanel: View {
 
                 Text(signal.message)
                     .foregroundStyle(.secondary)
+
+                Divider()
+
+                MicSetupCompactRow(state: micSetup)
+
+                Text(micSetup.recommendation)
+                    .font(.caption)
+                    .foregroundStyle(micSetup.isUsable ? Color.secondary : Color.orange)
             }
+        }
+    }
+}
+
+private struct MicSetupReadinessPanel: View {
+    let state: MicSetupReadinessDisplayState
+    let setupCheckResult: MicSetupReadinessDisplayState?
+    let onCheck: () -> Void
+
+    var body: some View {
+        RehearsalPanel(title: "Mic / Room Readiness") {
+            VStack(alignment: .leading, spacing: 10) {
+                HStack {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text(state.title)
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(state.isUsable ? .green : .orange)
+
+                        Text(state.summary)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+
+                    Spacer()
+
+                    Button {
+                        onCheck()
+                    } label: {
+                        Label("Check Mic Setup", systemImage: "waveform.and.magnifyingglass")
+                    }
+                }
+
+                MicSetupCompactRow(state: state)
+
+                if let setupCheckResult {
+                    Text(setupCheckResult.setupCheckResult)
+                        .font(.caption)
+                        .foregroundStyle(setupCheckResult.isUsable ? .green : .orange)
+                } else {
+                    Text("Sing or speak at rehearsal volume for 3 seconds, then check setup.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+        }
+    }
+}
+
+private struct MicSetupCompactRow: View {
+    let state: MicSetupReadinessDisplayState
+
+    var body: some View {
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 12) {
+                compactItems
+            }
+
+            VStack(alignment: .leading, spacing: 6) {
+                compactItems
+            }
+        }
+        .font(.caption)
+    }
+
+    private var compactItems: some View {
+        ForEach(state.compactItems, id: \.self) { item in
+            Text(item)
+                .foregroundStyle(.secondary)
+                .monospacedDigit()
         }
     }
 }

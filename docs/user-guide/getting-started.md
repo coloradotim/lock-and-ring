@@ -1,11 +1,13 @@
 # Getting Started
 
 1. Choose the microphone you want to use.
-2. Record a short take or import an existing audio take.
-3. Review Take Analysis for signal quality, Lock, Ring, Roughness, Stability,
+2. Sing or speak at rehearsal volume and use Check Mic Setup if you want a quick
+   technical readiness check.
+3. Record a short take or import an existing audio take.
+4. Review Take Analysis for signal quality, Lock, Ring, Roughness, Stability,
    timing, and visual evidence.
-4. Save the take, compare it to another take, try again, or discard it.
-5. Make one musical adjustment and repeat with another take.
+5. Save the take, compare it to another take, try again, or discard it.
+6. Make one musical adjustment and repeat with another take.
 
 If the app says the signal is too quiet, noisy, clipped, or low confidence, fix
 the input before trusting the metrics. Move closer, sing a steadier vowel,
