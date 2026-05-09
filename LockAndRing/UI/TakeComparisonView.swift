@@ -71,6 +71,18 @@ struct TakeComparisonView: View {
                 .disabled(take == nil && !isActive)
             }
             .font(.caption)
+
+            if let take {
+                DisclosureGroup("Analyze Chord") {
+                    ChordLabView(
+                        title: "Chord Lab",
+                        analysis: ChordLabAnalyzer().analyze(frames: take.frames),
+                        showsPanelChrome: false
+                    )
+                    .padding(.top, 8)
+                }
+                .font(.caption)
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(12)
