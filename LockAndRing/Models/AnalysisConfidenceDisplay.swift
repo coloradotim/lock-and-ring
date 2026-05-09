@@ -346,14 +346,56 @@ extension MeterSnapshot {
         let metrics = snapshots.map { $0.metric(for: kind) }
         let averageScore = metrics.map(\.score.value).averageValue
         let averageConfidence = metrics.map(\.confidence.value).averageValue
-        let signalQuality = metrics.map(\.signalQuality).first { $0 != .nominal } ?? .nominal
+        let signalQuality = aggregateSignalQuality(from: metrics.map(\.signalQuality))
+        let lowConfidenceRatio = metrics
+            .map(\.confidence.value)
+            .ratio { $0 < 0.55 }
+        let clippingRatio = metrics
+            .map(\.signalQuality)
+            .ratio { $0 == .clipping }
 
         return MetricSnapshot(
             kind: kind,
             score: MetricScore(value: averageScore),
-            confidence: MetricConfidence(value: averageConfidence, reason: "Take average confidence."),
+            confidence: MetricConfidence(
+                value: averageConfidence,
+                reason: "Take confidence: \(confidenceReason(lowConfidenceRatio: lowConfidenceRatio))."
+            ),
+            rawMeasurements: [
+                "takeAverageConfidence": averageConfidence,
+                "takeLowConfidenceFrameRatio": lowConfidenceRatio,
+                "takeClippingFrameRatio": clippingRatio
+            ],
             signalQuality: signalQuality
         )
+    }
+
+    private static func aggregateSignalQuality(from states: [SignalQualityState]) -> SignalQualityState {
+        guard !states.isEmpty else {
+            return .unavailable
+        }
+
+        if states.allSatisfy({ $0 == .unavailable }) {
+            return .unavailable
+        }
+
+        let clippingRatio = states.ratio { $0 == .clipping }
+        if clippingRatio >= 0.1 {
+            return .clipping
+        }
+
+        let problemStates = states.filter { $0 != .nominal && $0 != .unavailable }
+        guard Double(problemStates.count) / Double(states.count) >= 0.33 else {
+            return .nominal
+        }
+
+        return problemStates.mostFrequent ?? .nominal
+    }
+
+    private static func confidenceReason(lowConfidenceRatio: Double) -> String {
+        let formattedRatio = lowConfidenceRatio.formatted(.percent.precision(.fractionLength(0)))
+
+        return "\(formattedRatio) of frames were below the confidence threshold"
     }
 }
 
@@ -364,5 +406,30 @@ private extension Array where Element == Double {
         }
 
         return reduce(0, +) / Double(count)
+    }
+
+    func ratio(where predicate: (Double) -> Bool) -> Double {
+        guard !isEmpty else {
+            return 0
+        }
+
+        return Double(filter(predicate).count) / Double(count)
+    }
+}
+
+private extension Array where Element == SignalQualityState {
+    func ratio(where predicate: (SignalQualityState) -> Bool) -> Double {
+        guard !isEmpty else {
+            return 0
+        }
+
+        return Double(filter(predicate).count) / Double(count)
+    }
+
+    var mostFrequent: SignalQualityState? {
+        var counts: [SignalQualityState: Int] = [:]
+        forEach { counts[$0, default: 0] += 1 }
+
+        return counts.max { $0.value < $1.value }?.key
     }
 }

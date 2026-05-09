@@ -22,4 +22,28 @@ final class MainWorkflowStateTests: XCTestCase {
         XCTAssertEqual(state.primaryActionTitle, "Stop")
         XCTAssertFalse(state.showsTakeAnalysis)
     }
+
+    func testRecordingReadinessKeepsRecordVisibleWhilePreparing() {
+        let readiness = RecordingReadiness(inputState: .requestingPermission, hasKnownInput: true)
+
+        XCTAssertFalse(readiness.isAvailable)
+        XCTAssertEqual(readiness.statusMessage, "Preparing microphone...")
+    }
+
+    func testRecordingReadinessExplainsUnavailableRecording() {
+        let readiness = RecordingReadiness(inputState: .permissionDenied, hasKnownInput: true)
+
+        XCTAssertFalse(readiness.isAvailable)
+        XCTAssertEqual(
+            readiness.statusMessage,
+            "Record Take unavailable until microphone permission is granted."
+        )
+    }
+
+    func testRecordingReadinessEnablesRecordingWhenInputRuns() {
+        let readiness = RecordingReadiness(inputState: .running, hasKnownInput: true)
+
+        XCTAssertTrue(readiness.isAvailable)
+        XCTAssertNil(readiness.statusMessage)
+    }
 }

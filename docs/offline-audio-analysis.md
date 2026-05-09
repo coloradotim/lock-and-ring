@@ -18,6 +18,15 @@ The import UI accepts common audio types exposed by macOS:
 Imported files are decoded with `AVAudioFile`, normalized into floating-point channel samples, and downmixed to mono
 with the same `AudioFrameNormalizer` used by live input.
 
+Import diagnostics are attached to each imported take and shown in Take Analysis for debugging. The diagnostics include
+source type, file type, channel count, source/analysis sample rate, mono conversion behavior, normalization behavior,
+peak level, clipping ratio, and stereo correlation when at least two channels are present.
+
+The current import path does not apply gain normalization or resampling after `AVAudioFile` decoding. Stereo files are
+converted to mono with a simple channel average before frames enter the shared analysis path. This is intentional and
+visible because wide or phase-altered stereo masters can reduce mono energy or harmonic clarity; that should be diagnosed
+as an import-path property, not silently reported as poor singing.
+
 ## Playback Model
 
 The first implementation provides analysis playback rather than a full audio-player experience:

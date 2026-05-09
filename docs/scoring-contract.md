@@ -70,6 +70,17 @@ Scores are normalized to `0...1`, but the meaning is metric-specific:
 
 Do not assume all high scores are good. Roughness is intentionally inverted relative to Lock, Ring, and Stability.
 
+Displayed take-level scores must say what time window they represent:
+
+- **Live/current** scores describe the most recent analysis frame.
+- **Whole-take** scores are averages across the captured or imported take, including consonants, breaths, transitions,
+  and non-analyzable regions.
+- **Best locked/ringing vowel** scores are best trusted frames at or after analyzable vowel start.
+- **Sustained timing** values describe how long a lock/ring condition held inside the analyzable chord region.
+
+Do not present a whole-take average as if it were the best vowel moment. A world-class take can have lower whole-take
+averages because it includes onset and release time while still showing very high best-vowel lock/ring moments.
+
 ## Normalization Expectations
 
 Scorers should:
@@ -123,6 +134,15 @@ Confidence should drop when:
 - too few partials are available
 - harmonic anchors are unreliable
 - noise dominates peak extraction
+
+For take-level confidence, short local low-confidence regions should remain local diagnostics. The aggregate take state
+should become globally low confidence only when enough frames are technically compromised, clipping is persistent, or the
+average confidence falls below the reliable threshold. Aggregate metric snapshots include debug measurements such as
+low-confidence frame ratio and clipping frame ratio so the reason can be inspected.
+
+Top-end calibration target: exceptional human quartet recordings should be able to approach the high end of Lock, Ring,
+and Stability inside trusted analyzable vowel regions. The top of the scale remains meaningful for exceptional,
+near-ideal evidence, but it must not be reserved only for synthetic tones.
 
 ## Signal Quality Gate
 

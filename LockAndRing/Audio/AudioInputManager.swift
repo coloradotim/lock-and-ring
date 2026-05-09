@@ -229,7 +229,7 @@ final class AudioInputManager: AudioInputManaging {
     }
 }
 
-enum AudioInputState: Equatable {
+enum AudioInputState: Equatable, Sendable {
     case stopped
     case requestingPermission
     case running

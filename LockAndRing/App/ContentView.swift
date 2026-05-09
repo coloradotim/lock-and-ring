@@ -58,11 +58,19 @@ struct ContentView: View {
     }
 
     private var readyView: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        let recordingReadiness = viewModel.recordingReadiness
+
+        return VStack(alignment: .leading, spacing: 16) {
             workflowHeader(
                 title: "Ready",
                 subtitle: "Record or import a take, then review what happened."
             )
+
+            if let statusMessage = recordingReadiness.statusMessage {
+                Text(statusMessage)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
 
             HStack(spacing: 12) {
                 Button {
@@ -72,6 +80,8 @@ struct ContentView: View {
                 }
                 .keyboardShortcut(.space, modifiers: [])
                 .buttonStyle(.borderedProminent)
+                .disabled(!recordingReadiness.isAvailable)
+                .help(recordingReadiness.statusMessage ?? "Record a take from the selected microphone.")
 
                 Button {
                     isImporterPresented = true

@@ -171,6 +171,7 @@ enum OfflineAudioFileLoader {
 
         return OfflineAudioClip(
             fileName: url.lastPathComponent,
+            fileType: url.pathExtension.isEmpty ? "unknown" : url.pathExtension.lowercased(),
             sampleRate: processingFormat.sampleRate,
             monoSamples: frame.monoSamples,
             channelSamples: frame.channelSamples
@@ -197,20 +198,30 @@ enum OfflineAudioImportError: LocalizedError {
 
 struct OfflineAudioClip: Equatable, Sendable {
     let fileName: String
+    let fileType: String
     let sampleRate: Double
     let monoSamples: [Float]
     let channelSamples: [[Float]]
+    let diagnostics: OfflineAudioImportDiagnostics
 
     init(
         fileName: String,
+        fileType: String = "unknown",
         sampleRate: Double,
         monoSamples: [Float]? = nil,
         channelSamples: [[Float]]
     ) {
         self.fileName = fileName
+        self.fileType = fileType
         self.sampleRate = sampleRate
         self.channelSamples = channelSamples
         self.monoSamples = monoSamples ?? Self.downmixToMono(channelSamples)
+        self.diagnostics = OfflineAudioImportDiagnostics(
+            fileType: fileType,
+            sampleRate: sampleRate,
+            channelSamples: channelSamples,
+            monoSamples: self.monoSamples
+        )
     }
 
     var duration: Double {
@@ -267,5 +278,79 @@ struct OfflineAudioClip: Equatable, Sendable {
             }
             return sum / Float(channels.count)
         }
+    }
+}
+
+struct OfflineAudioImportDiagnostics: Equatable, Sendable {
+    let sourceType: TakeSource
+    let fileType: String
+    let channelCount: Int
+    let sourceSampleRate: Double
+    let analysisSampleRate: Double
+    let monoConversionBehavior: String
+    let normalizationBehavior: String
+    let peakLevel: Double
+    let clippingRatio: Double
+    let stereoCorrelation: Double?
+
+    init(
+        fileType: String,
+        sampleRate: Double,
+        channelSamples: [[Float]],
+        monoSamples: [Float]
+    ) {
+        self.sourceType = .imported
+        self.fileType = fileType
+        self.channelCount = channelSamples.count
+        self.sourceSampleRate = sampleRate
+        self.analysisSampleRate = sampleRate
+        self.monoConversionBehavior = channelSamples.count > 1
+            ? "Simple channel average from decoded PCM."
+            : "Single decoded PCM channel."
+        self.normalizationBehavior = "No gain normalization is applied before analysis."
+        self.peakLevel = monoSamples.map { Double(abs($0)) }.max() ?? 0
+        self.clippingRatio = monoSamples.ratio { abs($0) >= 0.98 }
+        self.stereoCorrelation = Self.stereoCorrelation(channelSamples)
+    }
+
+    private static func stereoCorrelation(_ channels: [[Float]]) -> Double? {
+        guard channels.count >= 2 else {
+            return nil
+        }
+
+        let left = channels[0]
+        let right = channels[1]
+        let count = min(left.count, right.count)
+        guard count > 1 else {
+            return nil
+        }
+
+        var dot = 0.0
+        var leftEnergy = 0.0
+        var rightEnergy = 0.0
+
+        for index in 0..<count {
+            let leftValue = Double(left[index])
+            let rightValue = Double(right[index])
+            dot += leftValue * rightValue
+            leftEnergy += leftValue * leftValue
+            rightEnergy += rightValue * rightValue
+        }
+
+        guard leftEnergy > 0, rightEnergy > 0 else {
+            return nil
+        }
+
+        return dot / sqrt(leftEnergy * rightEnergy)
+    }
+}
+
+private extension Array where Element == Float {
+    func ratio(where predicate: (Float) -> Bool) -> Double {
+        guard !isEmpty else {
+            return 0
+        }
+
+        return Double(filter(predicate).count) / Double(count)
     }
 }

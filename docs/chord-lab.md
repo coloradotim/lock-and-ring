@@ -36,8 +36,9 @@ Chord timing reports:
 - held-ring duration
 - largest delay contributor
 
-If a chord never locks or never rings, the timing remains blank for that event, but best lock and best ring attempts
-are still reported.
+If a chord never locks or never rings, the timing remains blank for that event, but best locked-vowel and best
+ringing-vowel attempts are still reported. Those best markers are selected from trusted analyzable vowel frames, not
+from onset or consonant artifacts before vowel start.
 
 ## Timeline
 
@@ -51,8 +52,8 @@ The timeline uses simple segments:
 - ringing
 - low confidence
 
-Markers show sound onset, analyzable vowel start, lock achieved, ring achieved, best lock, and best ring when those
-events are detected.
+Markers show sound onset, analyzable vowel start, lock achieved, ring achieved, best locked vowel, and best ringing
+vowel when those events are detected.
 
 ## Detection Rules
 

@@ -30,8 +30,8 @@ struct ChordLabAnalyzer {
         }
         let lock = firstSustainedSample(in: samples, after: vowelStart?.time ?? 0, matching: isLocked)
         let ring = firstSustainedSample(in: samples, after: vowelStart?.time ?? 0, matching: isRinging)
-        let bestLock = bestMetricPeak(in: samples, kind: .lock)
-        let bestRing = bestMetricPeak(in: samples, kind: .ring)
+        let bestLock = bestMetricPeak(in: samples, kind: .lock, startingAt: vowelStart?.time)
+        let bestRing = bestMetricPeak(in: samples, kind: .ring, startingAt: vowelStart?.time)
         let events = ChordLabEventSamples(
             soundOnset: soundOnset,
             vowelStart: vowelStart,
@@ -114,8 +114,22 @@ struct ChordLabAnalyzer {
             && sample.frame.meters.roughness.score.value <= thresholds.maximumRoughnessForRing
     }
 
-    private func bestMetricPeak(in samples: [ChordLabFrameSample], kind: MetricKind) -> ChordLabMetricPeak? {
-        guard let sample = samples.max(by: {
+    private func bestMetricPeak(
+        in samples: [ChordLabFrameSample],
+        kind: MetricKind,
+        startingAt vowelStartTime: TimeInterval?
+    ) -> ChordLabMetricPeak? {
+        guard let vowelStartTime else {
+            return nil
+        }
+
+        let eligibleSamples = samples.filter { sample in
+            sample.time >= vowelStartTime
+                && sample.averageConfidence >= thresholds.analyzableConfidence
+                && sample.frame.meters.metric(for: kind).confidence.value >= thresholds.minimumMetricConfidence
+        }
+
+        guard let sample = eligibleSamples.max(by: {
             $0.frame.meters.metric(for: kind).score.value < $1.frame.meters.metric(for: kind).score.value
         }) else {
             return nil
@@ -391,6 +405,47 @@ enum ChordTimelineSegmentKind: String, Equatable, Sendable {
             "Low confidence"
         }
     }
+
+    var paletteToken: ChordTimelinePaletteToken {
+        switch self {
+        case .silence:
+            .neutralGray
+        case .consonantOrOnset:
+            .orange
+        case .searching:
+            .amber
+        case .stable:
+            .blue
+        case .locked:
+            .green
+        case .ringing:
+            .purple
+        case .lowConfidence:
+            .red
+        }
+    }
+}
+
+enum ChordTimelinePaletteToken: Equatable, Hashable, Sendable {
+    case neutralGray
+    case orange
+    case amber
+    case blue
+    case green
+    case purple
+    case red
+}
+
+extension ChordTimelineSegmentKind {
+    static let legendOrder: [ChordTimelineSegmentKind] = [
+        .silence,
+        .consonantOrOnset,
+        .searching,
+        .stable,
+        .locked,
+        .ringing,
+        .lowConfidence
+    ]
 }
 
 struct ChordEventMarker: Identifiable, Equatable, Sendable {
@@ -424,9 +479,9 @@ enum ChordEventMarkerKind: String, Equatable, Sendable {
         case .ringAchieved:
             "Ring"
         case .bestLock:
-            "Best lock"
+            "Best locked vowel"
         case .bestRing:
-            "Best ring"
+            "Best ringing vowel"
         }
     }
 }
