@@ -2,8 +2,8 @@
 import XCTest
 
 final class SavedTakeLibraryTests: XCTestCase {
-    private var rootDirectory: URL!
-    private var library: SavedTakeLibrary!
+    private var rootDirectory: URL?
+    private var library: SavedTakeLibrary?
 
     override func setUpWithError() throws {
         rootDirectory = FileManager.default.temporaryDirectory
@@ -12,7 +12,7 @@ final class SavedTakeLibraryTests: XCTestCase {
     }
 
     override func tearDownWithError() throws {
-        if FileManager.default.fileExists(atPath: rootDirectory.path) {
+        if let rootDirectory, FileManager.default.fileExists(atPath: rootDirectory.path) {
             try FileManager.default.removeItem(at: rootDirectory)
         }
         rootDirectory = nil
@@ -20,6 +20,8 @@ final class SavedTakeLibraryTests: XCTestCase {
     }
 
     func testSaveTakePersistsMetadataAndAudio() throws {
+        let library = try XCTUnwrap(library)
+        let rootDirectory = try XCTUnwrap(rootDirectory)
         let take = recordedTake()
 
         let savedTake = try library.save(take)
@@ -33,6 +35,8 @@ final class SavedTakeLibraryTests: XCTestCase {
     }
 
     func testRenamePersistsAcrossReloads() throws {
+        let library = try XCTUnwrap(library)
+        let rootDirectory = try XCTUnwrap(rootDirectory)
         let savedTake = try library.save(recordedTake())
 
         let renamedTake = try library.rename(id: savedTake.id, to: "Polecat pass 2")
@@ -43,6 +47,7 @@ final class SavedTakeLibraryTests: XCTestCase {
     }
 
     func testDeleteRemovesMetadataAndAudioFile() throws {
+        let library = try XCTUnwrap(library)
         let savedTake = try library.save(recordedTake())
 
         try library.delete(id: savedTake.id)
@@ -52,6 +57,7 @@ final class SavedTakeLibraryTests: XCTestCase {
     }
 
     func testImportedTakeIsSavedAsLocalReplayableTake() throws {
+        let library = try XCTUnwrap(library)
         let take = recordedTake(source: .imported, name: "Imported take: sample.wav")
 
         let savedTake = try library.save(take)
@@ -64,6 +70,7 @@ final class SavedTakeLibraryTests: XCTestCase {
     }
 
     func testSavingTakeWithoutAudioFails() throws {
+        let library = try XCTUnwrap(library)
         let take = RecordedTake(
             slot: .takeA,
             name: "No audio",
