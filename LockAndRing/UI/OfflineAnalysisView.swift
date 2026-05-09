@@ -9,12 +9,12 @@ struct OfflineAnalysisView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Text("Offline Analysis")
+                Text("File Controls")
                     .font(.headline)
 
                 Spacer()
 
-                Button("Import") {
+                Button("Import Audio File") {
                     isImporterPresented = true
                 }
 

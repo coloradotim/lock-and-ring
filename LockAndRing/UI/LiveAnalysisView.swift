@@ -5,16 +5,31 @@ struct LiveAnalysisView: View {
     let spectrum: SpectrumSnapshot
     let spectrogram: SpectrogramSnapshot
     let ringTrend: RingTrendSnapshot
+    let takeRecorder: TakeRecorder
+    let onRecordTake: (TakeSlot) -> Void
+    let onSwitchMode: (AppMode) -> Void
 
     @State private var isDebugExpanded = false
+    @State private var isSpectrumExpanded = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             SignalStatusBanner(state: state.signal)
-            WhatJustHappenedPanel(summary: state.trendSummary)
-            CurrentQualityPanel(metrics: state.metricStates)
-            BaselineComparisonPanel(state: state.baselineComparison)
-            SpectrumPanel(spectrum: spectrum, spectrogram: spectrogram)
+            HStack(alignment: .top, spacing: 16) {
+                WhatJustHappenedPanel(summary: state.trendSummary)
+                CurrentQualityPanel(metrics: state.metricStates)
+            }
+            QuickTakePrompt(
+                recorder: takeRecorder,
+                onRecordTake: onRecordTake,
+                onSwitchMode: onSwitchMode
+            )
+            SpectrumPanel(
+                spectrum: spectrum,
+                spectrogram: spectrogram,
+                isCompact: true,
+                isExpanded: $isSpectrumExpanded
+            )
             ExperimentalDebugPanel(
                 isExpanded: $isDebugExpanded,
                 trend: ringTrend,
@@ -24,7 +39,7 @@ struct LiveAnalysisView: View {
     }
 }
 
-private struct SignalStatusBanner: View {
+struct SignalStatusBanner: View {
     let state: SignalQualityDisplayState
 
     var body: some View {
@@ -68,18 +83,23 @@ private struct WhatJustHappenedPanel: View {
 
     var body: some View {
         RehearsalPanel(title: "What Just Happened") {
-            VStack(alignment: .leading, spacing: 8) {
-                ForEach(summary.items) { item in
-                    HStack(spacing: 10) {
-                        Text(symbol(for: item.direction))
-                            .font(.headline)
-                            .foregroundStyle(color(for: item))
-                            .frame(width: 22)
+            if summary.hasUsableChanges {
+                VStack(alignment: .leading, spacing: 8) {
+                    ForEach(summary.items.filter { $0.direction != .notEnoughConfidence }) { item in
+                        HStack(spacing: 10) {
+                            Text(symbol(for: item.direction))
+                                .font(.headline)
+                                .foregroundStyle(color(for: item))
+                                .frame(width: 22)
 
-                        Text(item.summaryText)
-                            .foregroundStyle(color(for: item))
+                            Text(item.summaryText)
+                                .foregroundStyle(color(for: item))
+                        }
                     }
                 }
+            } else {
+                Text(summary.lowConfidenceMessage)
+                    .foregroundStyle(.secondary)
             }
         }
     }
@@ -113,7 +133,7 @@ private struct WhatJustHappenedPanel: View {
     }
 }
 
-private struct CurrentQualityPanel: View {
+struct CurrentQualityPanel: View {
     let metrics: [MetricDisplayState]
 
     var body: some View {
@@ -127,6 +147,81 @@ private struct CurrentQualityPanel: View {
     }
 }
 
+private struct QuickTakePrompt: View {
+    let recorder: TakeRecorder
+    let onRecordTake: (TakeSlot) -> Void
+    let onSwitchMode: (AppMode) -> Void
+
+    var body: some View {
+        RehearsalPanel(title: "Quick Take") {
+            HStack(spacing: 12) {
+                Text(prompt)
+                    .foregroundStyle(.secondary)
+
+                Spacer()
+
+                ForEach(buttons, id: \.title) { button in
+                    Button(button.title) {
+                        button.action()
+                    }
+                    .disabled(recorder.isRecording && !button.allowsRecording)
+                }
+            }
+        }
+    }
+
+    private var prompt: String {
+        if recorder.take(for: .takeA) == nil {
+            return "No baseline yet. Record Take 1 to compare changes."
+        }
+
+        if recorder.take(for: .takeB) == nil {
+            return "Take 1 recorded. Make one adjustment, then record Take 2."
+        }
+
+        return "Take comparison ready."
+    }
+
+    private var buttons: [QuickTakeButton] {
+        if recorder.take(for: .takeA) == nil {
+            return [
+                QuickTakeButton(title: "Record Take 1", allowsRecording: true) {
+                    onRecordTake(.takeA)
+                }
+            ]
+        }
+
+        if recorder.take(for: .takeB) == nil {
+            return [
+                QuickTakeButton(title: "Record Take 2", allowsRecording: true) {
+                    onRecordTake(.takeB)
+                },
+                QuickTakeButton(title: "Go to Take 1 / Take 2") {
+                    onSwitchMode(.takes)
+                }
+            ]
+        }
+
+        return [
+            QuickTakeButton(title: "View Take 1 / Take 2") {
+                onSwitchMode(.takes)
+            }
+        ]
+    }
+}
+
+private struct QuickTakeButton {
+    let title: String
+    let allowsRecording: Bool
+    let action: () -> Void
+
+    init(title: String, allowsRecording: Bool = false, action: @escaping () -> Void) {
+        self.title = title
+        self.allowsRecording = allowsRecording
+        self.action = action
+    }
+}
+
 private struct MetricQualityRow: View {
     let metric: MetricDisplayState
 
@@ -136,13 +231,13 @@ private struct MetricQualityRow: View {
                 .font(.subheadline.weight(.semibold))
                 .frame(width: 86, alignment: .leading)
 
+            Text(metric.qualityLabel)
+                .frame(width: 150, alignment: .leading)
+
             ProgressView(value: metric.score)
                 .progressViewStyle(.linear)
                 .opacity(metric.isReliable ? 1 : 0.42)
-                .frame(minWidth: 300)
-
-            Text(metric.qualityLabel)
-                .frame(width: 140, alignment: .leading)
+                .frame(minWidth: 210)
 
             Text(metric.score, format: .percent.precision(.fractionLength(0)))
                 .monospacedDigit()
@@ -153,7 +248,7 @@ private struct MetricQualityRow: View {
     }
 }
 
-private struct BaselineComparisonPanel: View {
+struct BaselineComparisonPanel: View {
     let state: BaselineComparisonState
 
     var body: some View {
@@ -166,16 +261,30 @@ private struct BaselineComparisonPanel: View {
                     }
                 }
             } else {
-                Text("No baseline yet. Record Take A to compare changes against a reference chord.")
+                Text("No baseline yet. Record Take 1 to compare changes against a reference chord.")
                     .foregroundStyle(.secondary)
             }
         }
     }
 }
 
-private struct SpectrumPanel: View {
+struct SpectrumPanel: View {
     let spectrum: SpectrumSnapshot
     let spectrogram: SpectrogramSnapshot
+    var isCompact = false
+    @Binding var isExpanded: Bool
+
+    init(
+        spectrum: SpectrumSnapshot,
+        spectrogram: SpectrogramSnapshot,
+        isCompact: Bool = false,
+        isExpanded: Binding<Bool> = .constant(false)
+    ) {
+        self.spectrum = spectrum
+        self.spectrogram = spectrogram
+        self.isCompact = isCompact
+        _isExpanded = isExpanded
+    }
 
     var body: some View {
         RehearsalPanel(title: "Spectrum / Spectrogram") {
@@ -184,8 +293,15 @@ private struct SpectrumPanel: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
 
-                SpectrumView(spectrum: spectrum)
-                SpectrogramView(spectrogram: spectrogram)
+                if isCompact {
+                    DisclosureGroup("Show spectrum detail", isExpanded: $isExpanded) {
+                        SpectrumView(spectrum: spectrum)
+                        SpectrogramView(spectrogram: spectrogram)
+                    }
+                } else {
+                    SpectrogramView(spectrogram: spectrogram)
+                    SpectrumView(spectrum: spectrum)
+                }
             }
         }
     }
@@ -195,7 +311,7 @@ private struct SpectrumPanel: View {
     }
 }
 
-private struct ExperimentalDebugPanel: View {
+struct ExperimentalDebugPanel: View {
     @Binding var isExpanded: Bool
     let trend: RingTrendSnapshot
     let meters: MeterSnapshot
@@ -213,7 +329,7 @@ private struct ExperimentalDebugPanel: View {
     }
 }
 
-private struct RehearsalPanel<Content: View>: View {
+struct RehearsalPanel<Content: View>: View {
     let title: String
     @ViewBuilder let content: Content
 

@@ -10,7 +10,7 @@ struct TakeComparisonView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             HStack {
-                Text("Take Comparison")
+                Text("Take 1 / Take 2")
                     .font(.headline)
 
                 Spacer()
@@ -79,9 +79,9 @@ struct TakeComparisonView: View {
 
     private func headlineColor(for comparison: TakeComparisonSummary) -> Color {
         switch comparison.headline {
-        case "Take B improved":
+        case "Take 2 improved":
             .green
-        case "Take B moved away":
+        case "Take 2 moved away":
             .red
         default:
             .secondary
@@ -100,6 +100,7 @@ private struct TakeMetricSummary: View {
             summaryRow("Ring", formatPercent(summary?.averageRing))
             summaryRow("Roughness", formatPercent(summary?.averageRoughness))
             summaryRow("Stable", formatSeconds(summary?.stabilityDuration))
+            summaryRow("Confidence", formatPercent(summary?.averageConfidence))
         }
         .font(.caption)
     }

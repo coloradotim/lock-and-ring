@@ -56,7 +56,7 @@ final class TakeComparisonTests: XCTestCase {
         XCTAssertTrue(comparison.roughness.isImproved)
         XCTAssertTrue(comparison.ring.isImproved)
         XCTAssertTrue(comparison.stabilityDuration.isImproved)
-        XCTAssertEqual(comparison.headline, "Take B improved")
+        XCTAssertEqual(comparison.headline, "Take 2 improved")
     }
 
     func testComparisonMarksDirectionalRegression() {
@@ -77,7 +77,7 @@ final class TakeComparisonTests: XCTestCase {
         XCTAssertTrue(comparison.roughness.isRegressed)
         XCTAssertTrue(comparison.ring.isRegressed)
         XCTAssertTrue(comparison.stabilityDuration.isRegressed)
-        XCTAssertEqual(comparison.headline, "Take B moved away")
+        XCTAssertEqual(comparison.headline, "Take 2 moved away")
     }
 
     func testStableDurationCountsFramesAboveThreshold() {
