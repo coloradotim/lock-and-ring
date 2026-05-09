@@ -40,6 +40,57 @@ final class SpectrumAnalyzer {
         var windowedSamples = Array(repeating: Float(0), count: fftSize)
         vDSP_vmul(paddedSamples, 1, window, 1, &windowedSamples, 1, vDSP_Length(fftSize))
 
+        let magnitudes = fftMagnitudes(for: windowedSamples)
+        let normalizedMagnitudes = normalize(magnitudes)
+        let smoothedMagnitudes = smooth(normalizedMagnitudes)
+        previousMagnitudes = smoothedMagnitudes
+
+        let bins = smoothedMagnitudes.enumerated().map { index, magnitude in
+            SpectrumBin(
+                frequency: Double(index) * sampleRate / Double(fftSize),
+                magnitude: Double(magnitude)
+            )
+        }
+        let peaks = extractPeaks(from: bins)
+
+        return SpectrumSnapshot(
+            sampleRate: sampleRate,
+            fftSize: fftSize,
+            bins: bins,
+            peaks: peaks
+        )
+    }
+
+    func extractPeaks(from bins: [SpectrumBin], minimumMagnitude: Double = 0.18) -> [SpectrumPeak] {
+        guard bins.count >= 3 else {
+            return []
+        }
+
+        let localPeaks = (1..<(bins.count - 1)).compactMap { index -> SpectrumPeak? in
+            let previous = bins[index - 1]
+            let current = bins[index]
+            let next = bins[index + 1]
+
+            guard current.magnitude >= minimumMagnitude,
+                  current.magnitude >= previous.magnitude,
+                  current.magnitude > next.magnitude else {
+                return nil
+            }
+
+            return SpectrumPeak(
+                frequency: current.frequency,
+                magnitude: current.magnitude,
+                binIndex: index
+            )
+        }
+
+        return localPeaks
+            .sorted { $0.magnitude > $1.magnitude }
+            .prefix(8)
+            .sorted { $0.frequency < $1.frequency }
+    }
+
+    private func fftMagnitudes(for windowedSamples: [Float]) -> [Float] {
         var real = Array(repeating: Float(0), count: fftSize / 2)
         var imaginary = Array(repeating: Float(0), count: fftSize / 2)
         var magnitudes = Array(repeating: Float(0), count: fftSize / 2)
@@ -93,53 +144,7 @@ final class SpectrumAnalyzer {
             }
         }
 
-        let normalizedMagnitudes = normalize(magnitudes)
-        let smoothedMagnitudes = smooth(normalizedMagnitudes)
-        previousMagnitudes = smoothedMagnitudes
-
-        let bins = smoothedMagnitudes.enumerated().map { index, magnitude in
-            SpectrumBin(
-                frequency: Double(index) * sampleRate / Double(fftSize),
-                magnitude: Double(magnitude)
-            )
-        }
-        let peaks = extractPeaks(from: bins)
-
-        return SpectrumSnapshot(
-            sampleRate: sampleRate,
-            fftSize: fftSize,
-            bins: bins,
-            peaks: peaks
-        )
-    }
-
-    func extractPeaks(from bins: [SpectrumBin], minimumMagnitude: Double = 0.18) -> [SpectrumPeak] {
-        guard bins.count >= 3 else {
-            return []
-        }
-
-        let localPeaks = (1..<(bins.count - 1)).compactMap { index -> SpectrumPeak? in
-            let previous = bins[index - 1]
-            let current = bins[index]
-            let next = bins[index + 1]
-
-            guard current.magnitude >= minimumMagnitude,
-                  current.magnitude >= previous.magnitude,
-                  current.magnitude > next.magnitude else {
-                return nil
-            }
-
-            return SpectrumPeak(
-                frequency: current.frequency,
-                magnitude: current.magnitude,
-                binIndex: index
-            )
-        }
-
-        return localPeaks
-            .sorted { $0.magnitude > $1.magnitude }
-            .prefix(8)
-            .sorted { $0.frequency < $1.frequency }
+        return magnitudes
     }
 
     private func paddedOrTrimmed(_ samples: [Float]) -> [Float] {
