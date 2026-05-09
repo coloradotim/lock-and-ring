@@ -48,6 +48,17 @@ final class RoughnessScorerTests: XCTestCase {
         XCTAssertEqual(score.partialsUsed, 2)
     }
 
+    func testRoughnessScoreExportsMetricSnapshot() {
+        let score = scorer.score(partials: harmonicPair(root: 220, ratio: semitoneRatio()))
+        let snapshot = score.metricSnapshot(signalQuality: .nominal)
+
+        XCTAssertEqual(snapshot.kind, .roughness)
+        XCTAssertEqual(snapshot.score.value, score.value)
+        XCTAssertGreaterThan(snapshot.confidence.value, 0)
+        XCTAssertEqual(snapshot.signalQuality, .nominal)
+        XCTAssertEqual(snapshot.rawMeasurements["partialsUsed"], Double(score.partialsUsed))
+    }
+
     func testInsufficientPartialsScoreAsSmooth() {
         let score = scorer.score(
             partials: [

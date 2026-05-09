@@ -129,6 +129,26 @@ struct RingScore: Equatable, Sendable {
         self.harmonicEnergyRatio = min(max(harmonicEnergyRatio, 0), 1)
         self.matchedHarmonics = matchedHarmonics
     }
+
+    func metricSnapshot(signalQuality: SignalQualityState = .nominal) -> MetricSnapshot {
+        MetricSnapshot(
+            kind: .ring,
+            score: MetricScore(value: value),
+            confidence: MetricConfidence(
+                value: confidence,
+                reason: confidence > 0 ? "Based on aligned upper harmonic peaks." : "No reliable harmonic anchor."
+            ),
+            contributingFactors: [
+                MetricFactor(name: "Harmonic energy", value: harmonicEnergyRatio, weight: 0.65),
+                MetricFactor(name: "Matched harmonics", value: min(Double(matchedHarmonics) / 7, 1), weight: 0.35)
+            ],
+            rawMeasurements: [
+                "harmonicEnergyRatio": harmonicEnergyRatio,
+                "matchedHarmonics": Double(matchedHarmonics)
+            ],
+            signalQuality: signalQuality
+        )
+    }
 }
 
 private struct HarmonicMatch {

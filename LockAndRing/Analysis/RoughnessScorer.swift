@@ -105,4 +105,26 @@ struct RoughnessScore: Equatable, Sendable {
         self.rawPairInteraction = max(rawPairInteraction, 0)
         self.partialsUsed = partialsUsed
     }
+
+    func metricSnapshot(signalQuality: SignalQualityState = .nominal) -> MetricSnapshot {
+        let confidenceValue = partialsUsed >= 2 ? min(Double(partialsUsed) / 6, 1) : 0
+
+        return MetricSnapshot(
+            kind: .roughness,
+            score: MetricScore(value: value),
+            confidence: MetricConfidence(
+                value: confidenceValue,
+                reason: confidenceValue > 0 ? "Based on pairwise partial interactions." : "Not enough partials."
+            ),
+            contributingFactors: [
+                MetricFactor(name: "Pair interaction", value: min(rawPairInteraction, 1)),
+                MetricFactor(name: "Partials used", value: min(Double(partialsUsed) / 10, 1))
+            ],
+            rawMeasurements: [
+                "rawPairInteraction": rawPairInteraction,
+                "partialsUsed": Double(partialsUsed)
+            ],
+            signalQuality: signalQuality
+        )
+    }
 }
