@@ -69,6 +69,18 @@ final class SavedTakeLibraryTests: XCTestCase {
         XCTAssertGreaterThan(replayClip.duration, 0)
     }
 
+    func testSavedTakePersistsRegionMetadata() throws {
+        let library = try XCTUnwrap(library)
+        let rootDirectory = try XCTUnwrap(rootDirectory)
+        let region = TakeRegion(name: "Final chord", startTime: 0.2, endTime: 0.8)
+        let take = recordedTake(regions: [region])
+
+        _ = try library.save(take)
+        let reloadedTake = try SavedTakeLibrary(rootDirectory: rootDirectory).load().first
+
+        XCTAssertEqual(reloadedTake?.regions, [region])
+    }
+
     func testSavingTakeWithoutAudioFails() throws {
         let library = try XCTUnwrap(library)
         let take = RecordedTake(
@@ -86,7 +98,8 @@ final class SavedTakeLibraryTests: XCTestCase {
 
     private func recordedTake(
         source: TakeSource = .recorded,
-        name: String = "Before adjustment"
+        name: String = "Before adjustment",
+        regions: [TakeRegion] = []
     ) -> RecordedTake {
         let startedAt = Date(timeIntervalSince1970: 1_000)
         let audioClip = OfflineAudioClip(
@@ -102,7 +115,8 @@ final class SavedTakeLibraryTests: XCTestCase {
             endedAt: startedAt.addingTimeInterval(audioClip.duration),
             frames: [frame(), frame()],
             source: source,
-            audioClip: audioClip
+            audioClip: audioClip,
+            regions: regions
         )
     }
 

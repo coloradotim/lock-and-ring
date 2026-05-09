@@ -4,6 +4,10 @@ import Foundation
 @MainActor
 extension AppViewModel {
     func toggleCurrentTakePlayback() {
+        playCurrentTake(region: nil, loop: false)
+    }
+
+    func playCurrentTake(region: TakeRegion?, loop: Bool) {
         guard let currentTakePlayer else {
             return
         }
@@ -13,13 +17,39 @@ extension AppViewModel {
         } else {
             inputManager.stop()
             audioPlayer?.stop()
-            if currentTakePlayer.currentTime >= currentTakePlayer.duration {
-                currentTakePlayer.currentTime = 0
+            let range = playbackRange(for: region)
+            if currentTakePlayer.currentTime < range.start || currentTakePlayer.currentTime >= range.end {
+                currentTakePlayer.currentTime = range.start
             }
             currentTakePlayer.play()
+            currentTakePlayback.rangeStart = range.start
+            currentTakePlayback.rangeEnd = range.end
+            currentTakePlayback.isLooping = loop
             currentTakePlayback.isPlaying = true
             startCurrentTakeProgressLoop()
         }
+    }
+
+    func stopRegionPlayback() {
+        stopCurrentTakePlayback(resetTime: false, restartInput: true)
+        currentTakePlayback.isLooping = false
+        currentTakePlayback.rangeStart = 0
+        currentTakePlayback.rangeEnd = currentTakePlayback.duration
+    }
+
+    func playReferenceTake() {
+        guard let savedTake else {
+            return
+        }
+
+        playRecordedTake(savedTake)
+    }
+
+    func stopAuditionPlayback() {
+        audioPlayer?.stop()
+        audioPlayer = nil
+        cleanupTemporaryPlaybackFile()
+        stopRegionPlayback()
     }
 
     func scrubCurrentTakePlayback(to progress: Double) {
@@ -36,6 +66,10 @@ extension AppViewModel {
 
     func replaceCurrentTake(_ take: RecordedTake?) {
         currentTake = take
+        selectedRegion = nil
+        analysisRegion = nil
+        regionDraftStart = 0
+        regionDraftEnd = take?.duration ?? 0
         prepareCurrentTakePlayback(for: take)
     }
 
@@ -60,7 +94,10 @@ extension AppViewModel {
                 duration: player.duration,
                 currentTime: 0,
                 isPlaying: false,
-                isAvailable: true
+                isAvailable: true,
+                isLooping: false,
+                rangeStart: 0,
+                rangeEnd: player.duration
             )
             libraryErrorMessage = nil
         } catch {
@@ -98,6 +135,38 @@ extension AppViewModel {
         currentTakePlayback = TakePlaybackState()
     }
 
+    func cleanupTemporaryPlaybackFile() {
+        if let temporaryPlaybackURL {
+            try? FileManager.default.removeItem(at: temporaryPlaybackURL)
+        }
+
+        temporaryPlaybackURL = nil
+    }
+
+    private func playRecordedTake(_ take: RecordedTake) {
+        guard let clip = take.audioClip else {
+            return
+        }
+
+        inputManager.stop()
+        stopCurrentTakePlayback(resetTime: false, restartInput: false)
+        audioPlayer?.stop()
+        cleanupTemporaryPlaybackFile()
+
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent("LockAndRing-reference-\(take.id.uuidString).wav")
+
+        do {
+            try AudioClipFileStore.write(clip, to: url)
+            audioPlayer = try AVAudioPlayer(contentsOf: url)
+            temporaryPlaybackURL = url
+            audioPlayer?.play()
+            libraryErrorMessage = nil
+        } catch {
+            libraryErrorMessage = error.localizedDescription
+        }
+    }
+
     private func startCurrentTakeProgressLoop() {
         currentTakePlaybackTask?.cancel()
         currentTakePlaybackTask = Task { [weak self] in
@@ -121,6 +190,20 @@ extension AppViewModel {
         }
 
         currentTakePlayback.currentTime = player.currentTime
+        if player.currentTime >= currentTakePlayback.rangeEnd {
+            if currentTakePlayback.isLooping {
+                player.currentTime = currentTakePlayback.rangeStart
+                player.play()
+                return true
+            }
+
+            player.pause()
+            currentTakePlayback.isPlaying = false
+            currentTakePlaybackTask = nil
+            startAudio()
+            return false
+        }
+
         if player.isPlaying {
             return true
         }
@@ -130,6 +213,18 @@ extension AppViewModel {
         startAudio()
         return false
     }
+
+    private func playbackRange(for region: TakeRegion?) -> (start: TimeInterval, end: TimeInterval) {
+        guard let duration = currentTake?.duration, duration > 0 else {
+            return (0, currentTakePlayer?.duration ?? 0)
+        }
+
+        guard let region = region?.clamped(to: duration) else {
+            return (0, currentTakePlayer?.duration ?? duration)
+        }
+
+        return (region.startTime, region.endTime)
+    }
 }
 
 struct TakePlaybackState: Equatable {
@@ -137,6 +232,9 @@ struct TakePlaybackState: Equatable {
     var currentTime: Double = 0
     var isPlaying = false
     var isAvailable = false
+    var isLooping = false
+    var rangeStart: TimeInterval = 0
+    var rangeEnd: TimeInterval = 0
 
     var progress: Double {
         guard duration > 0 else {

@@ -10,10 +10,52 @@ struct SavedTake: Codable, Identifiable, Equatable, Sendable {
     let audioPath: String
     var analysisSummary: SavedTakeAnalysisSummary?
     var signalConfidence: Double?
+    var regions: [TakeRegion]
     var notes: String?
 
     var audioURL: URL {
         URL(fileURLWithPath: audioPath)
+    }
+
+    init(
+        id: UUID,
+        name: String,
+        createdAt: Date,
+        source: TakeSource,
+        duration: TimeInterval,
+        audioPath: String,
+        analysisSummary: SavedTakeAnalysisSummary?,
+        signalConfidence: Double?,
+        regions: [TakeRegion] = [],
+        notes: String?
+    ) {
+        self.id = id
+        self.name = name
+        self.createdAt = createdAt
+        self.source = source
+        self.duration = duration
+        self.audioPath = audioPath
+        self.analysisSummary = analysisSummary
+        self.signalConfidence = signalConfidence
+        self.regions = regions
+        self.notes = notes
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.id = try container.decode(UUID.self, forKey: .id)
+        self.name = try container.decode(String.self, forKey: .name)
+        self.createdAt = try container.decode(Date.self, forKey: .createdAt)
+        self.source = try container.decode(TakeSource.self, forKey: .source)
+        self.duration = try container.decode(TimeInterval.self, forKey: .duration)
+        self.audioPath = try container.decode(String.self, forKey: .audioPath)
+        self.analysisSummary = try container.decodeIfPresent(
+            SavedTakeAnalysisSummary.self,
+            forKey: .analysisSummary
+        )
+        self.signalConfidence = try container.decodeIfPresent(Double.self, forKey: .signalConfidence)
+        self.regions = try container.decodeIfPresent([TakeRegion].self, forKey: .regions) ?? []
+        self.notes = try container.decodeIfPresent(String.self, forKey: .notes)
     }
 }
 
@@ -99,6 +141,7 @@ final class SavedTakeLibrary {
             audioPath: audioURL.path,
             analysisSummary: SavedTakeAnalysisSummary(summary: take.summary),
             signalConfidence: take.summary.averageConfidence,
+            regions: take.regions,
             notes: nil
         )
         savedTakes.append(savedTake)
