@@ -14,6 +14,7 @@ final class AppViewModel {
     var savedTake: RecordedTake?
     var savedTakes: [SavedTake]
     var libraryErrorMessage: String?
+    var micSetupCheckResult: MicSetupReadinessDisplayState?
     var meterHistory: [MeterSnapshot]
     var latestAnalysisInputFrame: AudioInputFrame?
     var currentTakePlayback = TakePlaybackState()
@@ -133,6 +134,19 @@ final class AppViewModel {
             inputState: inputManager.state,
             hasKnownInput: !inputManager.devices.isEmpty
         )
+    }
+
+    var micSetupReadiness: MicSetupReadinessDisplayState {
+        MicSetupReadinessDisplayState(
+            inputName: inputManager.selectedInputName,
+            inputState: inputManager.state,
+            frame: inputManager.latestFrame,
+            signal: SignalQualityDisplayState(meters: currentFrame.meters)
+        )
+    }
+
+    func runMicSetupCheck() {
+        micSetupCheckResult = micSetupReadiness
     }
 
     func importTake(from url: URL) {
