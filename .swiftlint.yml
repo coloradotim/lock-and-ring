@@ -1,0 +1,29 @@
+included:
+  - LockAndRing
+  - LockAndRingTests
+
+excluded:
+  - .build
+
+disabled_rules:
+  - trailing_comma
+
+opt_in_rules:
+  - empty_count
+  - fatal_error_message
+  - first_where
+  - force_unwrapping
+  - implicitly_unwrapped_optional
+  - sorted_imports
+
+line_length:
+  warning: 120
+  error: 140
+
+type_body_length:
+  warning: 300
+  error: 400
+
+file_length:
+  warning: 500
+  error: 700
