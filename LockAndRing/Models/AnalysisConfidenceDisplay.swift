@@ -176,18 +176,24 @@ struct TakeAnalysisDisplayState: Equatable, Sendable {
             }
             .max { $0.score < $1.score }
         let bestLockText = bestLock.map {
-            "Best lock: \($0.score.formatted(.percent.precision(.fractionLength(0)))) at \($0.time.formatted(.number.precision(.fractionLength(2))))s."
+            let score = $0.score.formatted(.percent.precision(.fractionLength(0)))
+            let time = $0.time.formatted(.number.precision(.fractionLength(2)))
+            return "Best lock: \(score) at \(time)s."
         } ?? "Best lock unavailable."
 
         self.confidenceState = confidenceState
-        self.warningMessage = confidenceState.isReliable ? nil : AnalysisConfidenceDisplayState(state: confidenceState).message
+        self.warningMessage = confidenceState.isReliable
+            ? nil
+            : AnalysisConfidenceDisplayState(state: confidenceState).message
 
         if confidenceState.isReliable {
             self.lockSummary = (bestLock?.score ?? 0) >= lockThreshold
                 ? "This take locked. \(bestLockText)"
                 : "This take did not lock. \(bestLockText)"
         } else if case let .lowConfidence(reason) = confidenceState {
-            self.lockSummary = "Could not reliably evaluate lock because \(reason.explanation). \(bestLockText) Confidence was low."
+            self.lockSummary = """
+            Could not reliably evaluate lock because \(reason.explanation). \(bestLockText) Confidence was low.
+            """
         } else {
             self.lockSummary = "Could not evaluate lock. \(bestLockText)"
         }
@@ -226,7 +232,10 @@ struct ChordTimingDisplayState: Equatable, Sendable {
             return prefix
         }
 
-        return "\(prefix) Best lock: \(score.formatted(.percent.precision(.fractionLength(0)))) at \(time.formatted(.number.precision(.fractionLength(2))))s."
+        let formattedScore = score.formatted(.percent.precision(.fractionLength(0)))
+        let formattedTime = time.formatted(.number.precision(.fractionLength(2)))
+
+        return "\(prefix) Best lock: \(formattedScore) at \(formattedTime)s."
     }
 }
 

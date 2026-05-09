@@ -32,42 +32,57 @@ struct ChordLabAnalyzer {
         let ring = firstSustainedSample(in: samples, after: vowelStart?.time ?? 0, matching: isRinging)
         let bestLock = bestMetricPeak(in: samples, kind: .lock)
         let bestRing = bestMetricPeak(in: samples, kind: .ring)
-        let heldLockDuration = duration(in: samples, matching: isLocked)
-        let heldRingDuration = duration(in: samples, matching: isRinging)
-        let summary = ChordTimingSummary(
-            soundOnsetTime: soundOnset?.time,
-            analyzableVowelStartTime: vowelStart?.time,
-            consonantOnsetDuration: duration(from: soundOnset?.time, to: vowelStart?.time),
-            timeFromVowelToStability: duration(from: vowelStart?.time, to: stability?.time),
-            timeFromVowelToLock: duration(from: vowelStart?.time, to: lock?.time),
-            timeFromVowelToRing: duration(from: vowelStart?.time, to: ring?.time),
-            bestLockScore: bestLock?.score,
-            bestLockTime: bestLock?.time,
-            bestRingScore: bestRing?.score,
-            bestRingTime: bestRing?.time,
-            heldLockDuration: heldLockDuration,
-            heldRingDuration: heldRingDuration,
-            largestDelayContributor: largestDelayContributor(
-                consonantDuration: duration(from: soundOnset?.time, to: vowelStart?.time),
-                stabilityDuration: duration(from: vowelStart?.time, to: stability?.time),
-                lockDuration: duration(from: vowelStart?.time, to: lock?.time),
-                ringDuration: duration(from: lock?.time, to: ring?.time)
-            )
+        let events = ChordLabEventSamples(
+            soundOnset: soundOnset,
+            vowelStart: vowelStart,
+            stability: stability,
+            lock: lock,
+            ring: ring,
+            bestLock: bestLock,
+            bestRing: bestRing
         )
 
         return ChordLabAnalysis(
-            summary: summary,
-            timelineSegments: timelineSegments(for: samples, soundOnsetTime: soundOnset?.time, vowelStartTime: vowelStart?.time),
-            eventMarkers: eventMarkers(
-                soundOnset: soundOnset,
-                vowelStart: vowelStart,
-                lock: lock,
-                ring: ring,
-                bestLock: bestLock,
-                bestRing: bestRing
+            summary: timingSummary(for: events, in: samples),
+            timelineSegments: timelineSegments(
+                for: samples,
+                soundOnsetTime: soundOnset?.time,
+                vowelStartTime: vowelStart?.time
             ),
-            confidenceState: AnalysisConfidenceState(meters: MeterSnapshot.aggregate(from: frames.map(\.meters))),
+            eventMarkers: eventMarkers(for: events),
+            confidenceState: AnalysisConfidenceState(
+                meters: MeterSnapshot.aggregate(from: frames.map(\.meters))
+            ),
             thresholds: thresholds
+        )
+    }
+
+    private func timingSummary(
+        for events: ChordLabEventSamples,
+        in samples: [ChordLabFrameSample]
+    ) -> ChordTimingSummary {
+        let heldLockDuration = duration(in: samples, matching: isLocked)
+        let heldRingDuration = duration(in: samples, matching: isRinging)
+
+        return ChordTimingSummary(
+            soundOnsetTime: events.soundOnset?.time,
+            analyzableVowelStartTime: events.vowelStart?.time,
+            consonantOnsetDuration: duration(from: events.soundOnset?.time, to: events.vowelStart?.time),
+            timeFromVowelToStability: duration(from: events.vowelStart?.time, to: events.stability?.time),
+            timeFromVowelToLock: duration(from: events.vowelStart?.time, to: events.lock?.time),
+            timeFromVowelToRing: duration(from: events.vowelStart?.time, to: events.ring?.time),
+            bestLockScore: events.bestLock?.score,
+            bestLockTime: events.bestLock?.time,
+            bestRingScore: events.bestRing?.score,
+            bestRingTime: events.bestRing?.time,
+            heldLockDuration: heldLockDuration,
+            heldRingDuration: heldRingDuration,
+            largestDelayContributor: largestDelayContributor(
+                consonantDuration: duration(from: events.soundOnset?.time, to: events.vowelStart?.time),
+                stabilityDuration: duration(from: events.vowelStart?.time, to: events.stability?.time),
+                lockDuration: duration(from: events.vowelStart?.time, to: events.lock?.time),
+                ringDuration: duration(from: events.lock?.time, to: events.ring?.time)
+            )
         )
     }
 
@@ -180,21 +195,14 @@ struct ChordLabAnalyzer {
         return .searching
     }
 
-    private func eventMarkers(
-        soundOnset: ChordLabFrameSample?,
-        vowelStart: ChordLabFrameSample?,
-        lock: ChordLabFrameSample?,
-        ring: ChordLabFrameSample?,
-        bestLock: ChordLabMetricPeak?,
-        bestRing: ChordLabMetricPeak?
-    ) -> [ChordEventMarker] {
+    private func eventMarkers(for events: ChordLabEventSamples) -> [ChordEventMarker] {
         [
-            marker(kind: .soundOnset, time: soundOnset?.time),
-            marker(kind: .analyzableVowelStart, time: vowelStart?.time),
-            marker(kind: .lockAchieved, time: lock?.time),
-            marker(kind: .ringAchieved, time: ring?.time),
-            marker(kind: .bestLock, time: bestLock?.time),
-            marker(kind: .bestRing, time: bestRing?.time)
+            marker(kind: .soundOnset, time: events.soundOnset?.time),
+            marker(kind: .analyzableVowelStart, time: events.vowelStart?.time),
+            marker(kind: .lockAchieved, time: events.lock?.time),
+            marker(kind: .ringAchieved, time: events.ring?.time),
+            marker(kind: .bestLock, time: events.bestLock?.time),
+            marker(kind: .bestRing, time: events.bestRing?.time)
         ].compactMap { $0 }
     }
 
@@ -275,6 +283,16 @@ struct ChordLabAnalyzer {
         .max { $0.1 < $1.1 }?
         .0 ?? .none
     }
+}
+
+private struct ChordLabEventSamples {
+    let soundOnset: ChordLabFrameSample?
+    let vowelStart: ChordLabFrameSample?
+    let stability: ChordLabFrameSample?
+    let lock: ChordLabFrameSample?
+    let ring: ChordLabFrameSample?
+    let bestLock: ChordLabMetricPeak?
+    let bestRing: ChordLabMetricPeak?
 }
 
 struct ChordLabAnalysis: Equatable, Sendable {

@@ -98,7 +98,9 @@ final class LiveAnalysisDisplayTests: XCTestCase {
         XCTAssertFalse(summary.hasUsableChanges)
         XCTAssertEqual(
             summary.lowConfidenceMessage,
-            "Could not reliably evaluate recent changes because confidence was low. Move closer or sing a steadier take."
+            """
+            Could not reliably evaluate recent changes because confidence was low. Move closer or sing a steadier take.
+            """
         )
     }
 

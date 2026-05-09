@@ -184,12 +184,16 @@ struct LockScore: Equatable, Sendable {
     }
 
     func metricSnapshot(signalQuality: SignalQualityState = .nominal) -> MetricSnapshot {
-        MetricSnapshot(
+        let confidenceReason = confidence > 0
+            ? "Based on simple-ratio fit, harmonic organization, roughness, and stability."
+            : "Not enough partials."
+
+        return MetricSnapshot(
             kind: .lock,
             score: MetricScore(value: value),
             confidence: MetricConfidence(
                 value: confidence,
-                reason: confidence > 0 ? "Based on simple-ratio fit, harmonic organization, roughness, and stability." : "Not enough partials."
+                reason: confidenceReason
             ),
             contributingFactors: [
                 MetricFactor(name: "Harmonic fit", value: harmonicFit, weight: 0.25),
