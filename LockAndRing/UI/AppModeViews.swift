@@ -23,7 +23,7 @@ struct CompactAudioStatusBar: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 16) {
-                Text("Mic:")
+                Text("Live Mic:")
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(.secondary)
 

@@ -138,10 +138,11 @@ private struct WhatJustHappenedPanel: View {
 }
 
 struct CurrentQualityPanel: View {
+    var title = "Current Quality"
     let metrics: [MetricDisplayState]
 
     var body: some View {
-        RehearsalPanel(title: "Current Quality") {
+        RehearsalPanel(title: title) {
             VStack(alignment: .leading, spacing: 12) {
                 MetricHelpDisclosure()
 
@@ -277,40 +278,65 @@ struct BaselineComparisonPanel: View {
 }
 
 struct SpectrumPanel: View {
+    let title: String
     let spectrum: SpectrumSnapshot
     let spectrogram: SpectrogramSnapshot
+    let spectrumTitle: String
+    let spectrogramTitle: String
+    let duration: Double?
     var isCompact = false
     @Binding var isExpanded: Bool
 
     init(
+        title: String = "Spectrum / Spectrogram",
         spectrum: SpectrumSnapshot,
         spectrogram: SpectrogramSnapshot,
+        spectrumTitle: String = "Live Spectrum",
+        spectrogramTitle: String = "Live Spectrogram",
+        duration: Double? = nil,
         isCompact: Bool = false,
         isExpanded: Binding<Bool> = .constant(false)
     ) {
+        self.title = title
         self.spectrum = spectrum
         self.spectrogram = spectrogram
+        self.spectrumTitle = spectrumTitle
+        self.spectrogramTitle = spectrogramTitle
+        self.duration = duration
         self.isCompact = isCompact
         _isExpanded = isExpanded
     }
 
     var body: some View {
-        RehearsalPanel(title: "Spectrum / Spectrogram") {
+        RehearsalPanel(title: title) {
             VStack(alignment: .leading, spacing: 14) {
                 Text(spectrumHelpText)
                 .font(.caption)
                 .foregroundStyle(.secondary)
 
                 if isCompact {
-                    DisclosureGroup("Show spectrum detail", isExpanded: $isExpanded) {
-                        SpectrumView(spectrum: spectrum)
-                        SpectrogramView(spectrogram: spectrogram)
+                    DisclosureGroup("Show experimental visual detail", isExpanded: $isExpanded) {
+                        sharedVisualDetail
                     }
                 } else {
-                    SpectrogramView(spectrogram: spectrogram)
-                    SpectrumView(spectrum: spectrum)
+                    sharedVisualDetail
                 }
             }
+        }
+    }
+
+    private var sharedVisualDetail: some View {
+        ScrollView(.horizontal) {
+            VStack(alignment: .leading, spacing: 14) {
+                SpectrumView(title: spectrumTitle, spectrum: spectrum)
+                SpectrogramView(
+                    title: spectrogramTitle,
+                    spectrogram: spectrogram,
+                    duration: duration
+                )
+            }
+            .frame(minWidth: 920)
+            .padding(.top, 8)
         }
     }
 

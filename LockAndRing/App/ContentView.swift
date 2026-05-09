@@ -145,11 +145,15 @@ struct ContentView: View {
             if let take = viewModel.currentTake {
                 TakeAnalysisSections(
                     take: take,
-                    displayState: displayState,
-                    frame: viewModel.currentFrame,
-                    inputFrame: viewModel.latestAnalysisInputFrame,
+                    displayState: displayState(for: take),
+                    frame: take.analysisFrame,
+                    playback: viewModel.currentTakePlayback,
+                    liveInputFrame: viewModel.inputManager.latestFrame,
+                    liveInputState: viewModel.inputManager.state,
                     isDebugExpanded: $isDebugExpanded,
-                    isVisualEvidenceExpanded: $isVisualEvidenceExpanded
+                    isVisualEvidenceExpanded: $isVisualEvidenceExpanded,
+                    onPlaybackToggle: viewModel.toggleCurrentTakePlayback,
+                    onPlaybackScrub: viewModel.scrubCurrentTakePlayback
                 )
 
                 TakeActionBar(
@@ -222,6 +226,14 @@ struct ContentView: View {
         )
     }
 
+    private func displayState(for take: RecordedTake) -> LiveAnalysisDisplayState {
+        LiveAnalysisDisplayState(
+            meters: take.analysisFrame.meters,
+            history: take.frames.map(\.meters),
+            baseline: viewModel.savedTake?.summary
+        )
+    }
+
     private func handleImport(_ result: Result<[URL], Error>) {
         guard case let .success(urls) = result, let url = urls.first else {
             return
@@ -261,9 +273,13 @@ private struct TakeAnalysisSections: View {
     let take: RecordedTake
     let displayState: LiveAnalysisDisplayState
     let frame: AnalysisFrame
-    let inputFrame: AudioInputFrame?
+    let playback: TakePlaybackState
+    let liveInputFrame: AudioInputFrame?
+    let liveInputState: AudioInputState
     @Binding var isDebugExpanded: Bool
     @Binding var isVisualEvidenceExpanded: Bool
+    let onPlaybackToggle: () -> Void
+    let onPlaybackScrub: (Double) -> Void
 
     var body: some View {
         let takeState = TakeAnalysisDisplayState(take: take)
@@ -272,26 +288,95 @@ private struct TakeAnalysisSections: View {
 
         VStack(alignment: .leading, spacing: 16) {
             TakeSummaryPanel(take: take, state: takeState)
-            CurrentQualityPanel(metrics: displayState.metricStates)
+            CurrentTakePlaybackPanel(
+                playback: playback,
+                onToggle: onPlaybackToggle,
+                onScrub: onPlaybackScrub
+            )
+            CurrentQualityPanel(title: "Recorded Take Quality", metrics: displayState.metricStates)
             ChordLabView(
                 title: "Timing / Chord Behavior",
                 analysis: chordAnalysis
             )
             PhrasePlaceholderPanel(state: phraseState)
             SpectrumPanel(
+                title: "Advanced Details",
                 spectrum: frame.spectrum,
                 spectrogram: frame.spectrogram,
+                spectrumTitle: "Recorded Take Spectrum",
+                spectrogramTitle: "Recorded Take Spectrogram",
+                duration: take.duration,
                 isCompact: true,
                 isExpanded: $isVisualEvidenceExpanded
             )
+            LiveInputMonitorPanel(frame: liveInputFrame, state: liveInputState)
             ExperimentalDebugPanel(
                 isExpanded: $isDebugExpanded,
                 frame: frame,
-                inputFrame: inputFrame,
+                inputFrame: liveInputFrame,
                 trend: frame.ringHistory,
                 meters: frame.meters
             )
         }
+    }
+}
+
+private struct CurrentTakePlaybackPanel: View {
+    let playback: TakePlaybackState
+    let onToggle: () -> Void
+    let onScrub: (Double) -> Void
+
+    var body: some View {
+        RehearsalPanel(title: "Playback") {
+            HStack(spacing: 12) {
+                Button {
+                    onToggle()
+                } label: {
+                    Label(playback.isPlaying ? "Pause" : "Play", systemImage: playbackIcon)
+                }
+                .disabled(!playback.isAvailable)
+
+                Text(timeText)
+                    .font(.system(.caption, design: .monospaced))
+                    .foregroundStyle(.secondary)
+                    .frame(width: 98, alignment: .leading)
+
+                Slider(
+                    value: Binding(
+                        get: { playback.progress },
+                        set: onScrub
+                    ),
+                    in: 0...1
+                )
+                .disabled(!playback.isAvailable)
+            }
+            .controlSize(.large)
+        }
+    }
+
+    private var playbackIcon: String {
+        playback.isPlaying ? "pause.fill" : "play.fill"
+    }
+
+    private var timeText: String {
+        "\(formatSeconds(playback.currentTime)) / \(formatSeconds(playback.duration))"
+    }
+}
+
+private struct LiveInputMonitorPanel: View {
+    let frame: AudioInputFrame?
+    let state: AudioInputState
+
+    var body: some View {
+        DisclosureGroup {
+            AudioInputMonitorView(frame: frame, state: state)
+                .padding(.top, 8)
+        } label: {
+            Text("Live Input Monitor")
+                .font(.headline)
+        }
+        .padding()
+        .background(.quaternary.opacity(0.35), in: RoundedRectangle(cornerRadius: 8))
     }
 }
 

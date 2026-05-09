@@ -17,6 +17,11 @@ While recording, the screen stays intentionally quiet. It shows elapsed time,
 signal quality, and a Stop action. The full Lock, Ring, Roughness, Stability,
 timing, phrase, and visual evidence sections appear after the take exists.
 
+After recording stops, Take Analysis describes the completed take, not the live
+microphone feed. The quality metrics are frozen from the recorded frames until
+you record, import, or select another take. Playback appears with play/pause,
+elapsed time, duration, and scrubbing so you can listen before saving.
+
 When signal confidence is low, the app avoids strong claims. It may show one
 summary such as "Not enough usable signal to evaluate changes yet" instead of
 listing repeated metric warnings.
