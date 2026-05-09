@@ -20,6 +20,11 @@ struct ContentView: View {
 
             LiveMetersView(snapshot: viewModel.currentFrame.meters)
 
+            RingExperimentView(
+                trend: viewModel.currentFrame.ringHistory,
+                meters: viewModel.currentFrame.meters
+            )
+
             SpectrumView(spectrum: viewModel.currentFrame.spectrum)
 
             SpectrogramView(spectrogram: viewModel.currentFrame.spectrogram)

@@ -5,6 +5,7 @@ struct AnalysisFrame: Equatable, Sendable {
     let meters: MeterSnapshot
     let spectrum: SpectrumSnapshot
     let spectrogram: SpectrogramSnapshot
+    let ringHistory: RingTrendSnapshot
 
     static let placeholder = AnalysisFrame(
         timestamp: Date(timeIntervalSince1970: 0),
@@ -15,6 +16,7 @@ struct AnalysisFrame: Equatable, Sendable {
             stability: MetricScore(value: 0)
         ),
         spectrum: SpectrumSnapshot.placeholder,
-        spectrogram: .placeholder
+        spectrogram: .placeholder,
+        ringHistory: .placeholder
     )
 }
