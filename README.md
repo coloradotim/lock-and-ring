@@ -1,8 +1,12 @@
 # Lock & Ring
 
-Lock & Ring is a macOS-native rehearsal analysis tool for barbershop quartets and vocal ensembles.
+Lock & Ring is a macOS-native take-based rehearsal analysis tool for barbershop quartets and vocal ensembles.
 
-The app listens to a live ensemble through a single microphone and attempts to measure:
+The app helps singers record or import a take, review ensemble-level analysis, and decide whether to save, compare,
+try again, or discard the take. A take may come from the live microphone or from an imported recording; after it exists,
+the user-facing workflow should converge on **Take Analysis**.
+
+Take Analysis uses a single microphone or imported mono/stereo audio to measure:
 
 - Harmonic lock
 - Dissonance / roughness
@@ -19,6 +23,7 @@ The goal is to help singers answer questions like:
 - “Did the ring increase after we tuned that interval?”
 - “Are we stable or drifting?”
 - “Did that vowel alignment reduce roughness?”
+- “Should we save this take, compare it, try again, or discard it?”
 
 The first versions intentionally avoid trying to perfectly identify each singer independently.
 
@@ -30,16 +35,18 @@ Instead, the app analyzes the combined waveform and evaluates the overall harmon
 
 A macOS app that:
 
+- Records or imports short rehearsal takes.
+- Shows Take Analysis after a take exists.
+- Lets singers save, compare, try again, or discard.
 - Captures live microphone audio.
 - Runs low-latency FFT/spectral analysis.
-- Displays live meters for:
+- Displays take-level metrics for:
   - Lock
   - Ring
   - Roughness
   - Stability
-- Displays a live spectrogram or harmonic spectrum.
-- Supports recording short rehearsal clips.
-- Compares recent audio windows against prior windows.
+- Shows signal confidence and visual evidence.
+- Compares takes when the singer chooses a comparison.
 
 ## Technical direction
 
@@ -118,7 +125,7 @@ LockAndRingTests/
 5. Roughness scoring
 6. Ring scoring
 7. Stability scoring
-8. Rehearsal-oriented UI refinement
+8. Take Analysis workflow refinement
 
 ## Inspiration
 
@@ -217,12 +224,13 @@ swift build
 swift run LockAndRing
 ```
 
-The app launches a minimal SwiftUI window with:
+The app launches a SwiftUI window for the current prototype with:
 
 - App title
-- Audio input selector placeholder
-- Empty Lock, Ring, Roughness, and Stability meters
-- Placeholder spectrum view
+- Audio input selection
+- Record/import take workflows
+- Lock, Ring, Roughness, and Stability analysis
+- Spectrum/spectrogram evidence
 
 ## Test
 

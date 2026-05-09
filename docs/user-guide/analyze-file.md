@@ -1,13 +1,14 @@
-# Analyze File
+# Importing a Take
 
-Analyze File answers: what does this uploaded or prerecorded sample show?
+Imported audio is treated as a take. Importing answers: what does this recorded
+take show, and should we save, compare, try again, or discard it?
 
-Use Import Audio File to load a recording. After import, play or scrub the
-timeline and read Current Quality at the playback point. The same scoring path
-is used for live microphone frames and imported audio frames.
+Use Import Audio File to load a recording. After import, Take Analysis should
+use the same scoring path as microphone-recorded takes. Play or scrub the
+timeline to inspect specific moments.
 
-Analyze File gives spectrum and spectrogram more room than Live Rehearsal
-because file review is a timeline and inspection workflow.
+Imported take review may give spectrum and spectrogram more room because file
+review is a timeline and inspection workflow.
 
 If the file has clipping, low signal, or noisy sections, trust confidence and
 signal warnings more than the raw score.
