@@ -2,9 +2,11 @@ import SwiftUI
 
 struct LiveAnalysisView: View {
     let state: LiveAnalysisDisplayState
+    let frame: AnalysisFrame
     let spectrum: SpectrumSnapshot
     let spectrogram: SpectrogramSnapshot
     let ringTrend: RingTrendSnapshot
+    let inputFrame: AudioInputFrame?
     let takeRecorder: TakeRecorder
     let onRecordTake: (TakeSlot) -> Void
     let onSwitchMode: (AppMode) -> Void
@@ -32,6 +34,8 @@ struct LiveAnalysisView: View {
             )
             ExperimentalDebugPanel(
                 isExpanded: $isDebugExpanded,
+                frame: frame,
+                inputFrame: inputFrame,
                 trend: ringTrend,
                 meters: state.meters
             )
@@ -138,9 +142,13 @@ struct CurrentQualityPanel: View {
 
     var body: some View {
         RehearsalPanel(title: "Current Quality") {
-            Grid(alignment: .leading, horizontalSpacing: 14, verticalSpacing: 12) {
-                ForEach(metrics) { metric in
-                    MetricQualityRow(metric: metric)
+            VStack(alignment: .leading, spacing: 12) {
+                MetricHelpDisclosure()
+
+                Grid(alignment: .leading, horizontalSpacing: 14, verticalSpacing: 12) {
+                    ForEach(metrics) { metric in
+                        MetricQualityRow(metric: metric)
+                    }
                 }
             }
         }
@@ -313,13 +321,18 @@ struct SpectrumPanel: View {
 
 struct ExperimentalDebugPanel: View {
     @Binding var isExpanded: Bool
+    let frame: AnalysisFrame
+    let inputFrame: AudioInputFrame?
     let trend: RingTrendSnapshot
     let meters: MeterSnapshot
 
     var body: some View {
         DisclosureGroup(isExpanded: $isExpanded) {
-            RingExperimentView(trend: trend, meters: meters)
-                .padding(.top, 12)
+            VStack(alignment: .leading, spacing: 12) {
+                RingExperimentView(trend: trend, meters: meters)
+                ScoringInspectorView(frame: frame, inputFrame: inputFrame)
+            }
+            .padding(.top, 12)
         } label: {
             Text("Experimental / Debug")
                 .font(.headline)

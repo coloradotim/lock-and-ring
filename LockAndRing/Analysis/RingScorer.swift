@@ -35,7 +35,9 @@ struct RingScorer {
                 value: 0,
                 confidence: 0,
                 harmonicEnergyRatio: 0,
-                matchedHarmonics: 0
+                matchedHarmonics: 0,
+                upperHarmonicEnergyProxy: 0,
+                anchorFrequency: nil
             )
         }
 
@@ -56,7 +58,9 @@ struct RingScorer {
             value: score,
             confidence: confidence,
             harmonicEnergyRatio: harmonicEnergyRatio,
-            matchedHarmonics: upperHarmonics.count
+            matchedHarmonics: upperHarmonics.count,
+            upperHarmonicEnergyProxy: upperStrength,
+            anchorFrequency: anchor.frequency
         )
     }
 
@@ -117,21 +121,37 @@ struct RingScore: Equatable, Sendable {
     let confidence: Double
     let harmonicEnergyRatio: Double
     let matchedHarmonics: Int
+    let upperHarmonicEnergyProxy: Double
+    let anchorFrequency: Double?
 
     init(
         value: Double,
         confidence: Double,
         harmonicEnergyRatio: Double,
-        matchedHarmonics: Int
+        matchedHarmonics: Int,
+        upperHarmonicEnergyProxy: Double = 0,
+        anchorFrequency: Double? = nil
     ) {
         self.value = min(max(value, 0), 1)
         self.confidence = min(max(confidence, 0), 1)
         self.harmonicEnergyRatio = min(max(harmonicEnergyRatio, 0), 1)
         self.matchedHarmonics = matchedHarmonics
+        self.upperHarmonicEnergyProxy = max(upperHarmonicEnergyProxy, 0)
+        self.anchorFrequency = anchorFrequency
     }
 
     func metricSnapshot(signalQuality: SignalQualityState = .nominal) -> MetricSnapshot {
-        MetricSnapshot(
+        var rawMeasurements = [
+            "harmonicEnergyRatio": harmonicEnergyRatio,
+            "matchedHarmonics": Double(matchedHarmonics),
+            "upperHarmonicEnergyProxy": upperHarmonicEnergyProxy
+        ]
+
+        if let anchorFrequency {
+            rawMeasurements["anchorFrequency"] = anchorFrequency
+        }
+
+        return MetricSnapshot(
             kind: .ring,
             score: MetricScore(value: value),
             confidence: MetricConfidence(
@@ -142,10 +162,7 @@ struct RingScore: Equatable, Sendable {
                 MetricFactor(name: "Harmonic energy", value: harmonicEnergyRatio, weight: 0.65),
                 MetricFactor(name: "Matched harmonics", value: min(Double(matchedHarmonics) / 7, 1), weight: 0.35)
             ],
-            rawMeasurements: [
-                "harmonicEnergyRatio": harmonicEnergyRatio,
-                "matchedHarmonics": Double(matchedHarmonics)
-            ],
+            rawMeasurements: rawMeasurements,
             signalQuality: signalQuality
         )
     }

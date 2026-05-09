@@ -94,6 +94,9 @@ That means:
 Architecture Decision Records live in [`docs/adr/`](docs/adr/) for important
 technical, DSP, product, and rehearsal workflow decisions.
 
+User-facing help lives in [`docs/user-guide/`](docs/user-guide/). Technical and
+scoring notes are indexed in [`docs/technical/`](docs/technical/).
+
 ## Proposed architecture
 
 ```text

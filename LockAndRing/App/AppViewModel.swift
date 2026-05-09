@@ -8,6 +8,7 @@ final class AppViewModel {
     var currentFrame: AnalysisFrame
     var takeRecorder: TakeRecorder
     var meterHistory: [MeterSnapshot]
+    var latestAnalysisInputFrame: AudioInputFrame?
     private var takePlaybackTask: Task<Void, Never>?
     private let spectrumAnalyzer: SpectrumAnalyzer
     private let roughnessScorer: RoughnessScorer
@@ -115,6 +116,7 @@ final class AppViewModel {
             ringHistory: currentFrame.ringHistory.appending(ring)
         )
         currentFrame = analyzedFrame
+        latestAnalysisInputFrame = frame
         meterHistory = Array((meterHistory + [meters]).suffix(64))
         takeRecorder.record(analyzedFrame)
     }

@@ -51,6 +51,8 @@ struct ContentView: View {
 
     private var liveMode: some View {
         VStack(alignment: .leading, spacing: 16) {
+            ModeHelpDisclosure(mode: .live)
+
             CompactAudioStatusBar(
                 inputManager: viewModel.inputManager,
                 frame: viewModel.inputManager.latestFrame,
@@ -59,9 +61,11 @@ struct ContentView: View {
 
             LiveAnalysisView(
                 state: displayState,
+                frame: viewModel.currentFrame,
                 spectrum: viewModel.currentFrame.spectrum,
                 spectrogram: viewModel.currentFrame.spectrogram,
                 ringTrend: viewModel.currentFrame.ringHistory,
+                inputFrame: viewModel.latestAnalysisInputFrame,
                 takeRecorder: viewModel.takeRecorder,
                 onRecordTake: viewModel.startTakeRecording
             ) { mode in
@@ -89,12 +93,14 @@ struct ContentView: View {
     }
 
     private var fileMode: some View {
-        FileAnalysisModeView(
-            analyzer: viewModel.offlineAnalyzer,
-            displayState: displayState,
-            spectrum: viewModel.currentFrame.spectrum,
-            spectrogram: viewModel.currentFrame.spectrogram
-        )
+            FileAnalysisModeView(
+                analyzer: viewModel.offlineAnalyzer,
+                displayState: displayState,
+                frame: viewModel.currentFrame,
+                inputFrame: viewModel.latestAnalysisInputFrame,
+                spectrum: viewModel.currentFrame.spectrum,
+                spectrogram: viewModel.currentFrame.spectrogram
+            )
     }
 
     private var displayState: LiveAnalysisDisplayState {
