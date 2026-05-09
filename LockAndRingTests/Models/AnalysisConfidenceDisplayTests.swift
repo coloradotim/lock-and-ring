@@ -75,12 +75,93 @@ final class AnalysisConfidenceDisplayTests: XCTestCase {
         XCTAssertFalse(state.lockSummary.contains("This chord did not lock"))
     }
 
+    func testChordTimingSummaryNamesLockAndRingBehavior() {
+        let state = ChordTimingDisplayState(
+            analysis: chordAnalysis(
+                summary: chordSummary(
+                    timeFromVowelToLock: 0.22,
+                    timeFromVowelToRing: 0.31,
+                    largestDelayContributor: .ring
+                )
+            )
+        )
+
+        XCTAssertTrue(state.lockSummary.contains("locked quickly"))
+        XCTAssertTrue(state.lockSummary.contains("developed ring quickly"))
+        XCTAssertTrue(state.lockSummary.contains("Main delay: ring"))
+    }
+
+    func testChordTimingSummaryNamesLockWithoutStrongRing() {
+        let state = ChordTimingDisplayState(
+            analysis: chordAnalysis(
+                summary: chordSummary(
+                    timeFromVowelToLock: 0.42,
+                    timeFromVowelToRing: nil,
+                    bestRingScore: 0.51,
+                    bestRingTime: 0.62
+                )
+            )
+        )
+
+        XCTAssertTrue(state.lockSummary.contains("locked after a brief search"))
+        XCTAssertTrue(state.lockSummary.contains("did not develop strong ring"))
+        XCTAssertTrue(state.lockSummary.contains("Best ring: 51% at 0.62s"))
+    }
+
+    func testChordTimingSummaryNamesNoLockWithBestAttempt() {
+        let state = ChordTimingDisplayState(
+            analysis: chordAnalysis(
+                summary: chordSummary(timeFromVowelToLock: nil, timeFromVowelToRing: nil)
+            )
+        )
+
+        XCTAssertTrue(state.lockSummary.contains("This chord did not lock"))
+        XCTAssertTrue(state.lockSummary.contains("Best lock: 66% at 0.44s"))
+    }
+
     func testPhraseSegmentationReportsUncertaintyForInsufficientAudio() {
         let state = PhraseSegmentationDisplayState(regionStates: [.lowConfidence(reason: .signalTooQuiet)])
 
         XCTAssertEqual(
             state.warningMessage,
             "Some regions could not be classified because the signal was too quiet or unstable."
+        )
+    }
+
+    private func chordAnalysis(
+        summary: ChordTimingSummary,
+        confidenceState: AnalysisConfidenceState = .reliable
+    ) -> ChordLabAnalysis {
+        ChordLabAnalysis(
+            summary: summary,
+            timelineSegments: [],
+            eventMarkers: [],
+            confidenceState: confidenceState,
+            thresholds: ChordLabThresholds()
+        )
+    }
+
+    private func chordSummary(
+        timeFromVowelToLock: TimeInterval?,
+        timeFromVowelToRing: TimeInterval?,
+        bestRingScore: Double? = 0.58,
+        bestRingTime: TimeInterval? = 0.55,
+        largestDelayContributor: ChordDelayContributor = .lock
+    ) -> ChordTimingSummary {
+        ChordTimingSummary(
+            soundOnsetTime: 0.1,
+            analyzableVowelStartTime: 0.18,
+            consonantOnsetDuration: 0.08,
+            timeFromVowelToStability: 0.16,
+            timeFromVowelToLock: timeFromVowelToLock,
+            timeFromVowelToRing: timeFromVowelToRing,
+            bestLockScore: 0.66,
+            bestLockTime: 0.44,
+            bestRingScore: bestRingScore,
+            bestRingTime: bestRingTime,
+            heldLockDuration: 0.34,
+            heldRingDuration: timeFromVowelToRing == nil ? 0 : 0.24,
+            largestDelayContributor: largestDelayContributor
         )
     }
 

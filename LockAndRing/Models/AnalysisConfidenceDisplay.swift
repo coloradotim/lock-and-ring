@@ -212,8 +212,10 @@ struct ChordTimingDisplayState: Equatable, Sendable {
             : AnalysisConfidenceDisplayState(state: analysis.confidenceState).message
 
         if analysis.confidenceState.isReliable {
-            if analysis.summary.didLock {
-                self.lockSummary = "Locked during the chord."
+            if analysis.summary.didLock, analysis.summary.didRing {
+                self.lockSummary = Self.lockAndRingSummary(summary: analysis.summary)
+            } else if analysis.summary.didLock {
+                self.lockSummary = Self.lockWithoutRingSummary(summary: analysis.summary)
             } else {
                 self.lockSummary = Self.bestLockText(prefix: "This chord did not lock.", summary: analysis.summary)
             }
@@ -227,15 +229,67 @@ struct ChordTimingDisplayState: Equatable, Sendable {
         }
     }
 
+    private static func lockAndRingSummary(summary: ChordTimingSummary) -> String {
+        let lockText = timingText(prefix: "locked", duration: summary.timeFromVowelToLock)
+        let ringText = timingText(prefix: "developed ring", duration: summary.timeFromVowelToRing)
+        let delayText = delayText(summary: summary)
+
+        return "This chord \(lockText) and \(ringText).\(delayText)"
+    }
+
+    private static func lockWithoutRingSummary(summary: ChordTimingSummary) -> String {
+        let lockText = timingText(prefix: "locked", duration: summary.timeFromVowelToLock)
+        let bestRing = peakText(label: "Best ring", score: summary.bestRingScore, time: summary.bestRingTime)
+        let delayText = delayText(summary: summary)
+
+        return "This chord \(lockText), but did not develop strong ring. \(bestRing)\(delayText)"
+    }
+
     private static func bestLockText(prefix: String, summary: ChordTimingSummary) -> String {
         guard let score = summary.bestLockScore, let time = summary.bestLockTime else {
             return prefix
         }
 
-        let formattedScore = score.formatted(.percent.precision(.fractionLength(0)))
-        let formattedTime = time.formatted(.number.precision(.fractionLength(2)))
+        return "\(prefix) \(peakText(label: "Best lock", score: score, time: time))"
+    }
 
-        return "\(prefix) Best lock: \(formattedScore) at \(formattedTime)s."
+    private static func timingText(prefix: String, duration: TimeInterval?) -> String {
+        guard let duration else {
+            return prefix
+        }
+
+        let pace: String
+        if duration <= 0.35 {
+            pace = "quickly"
+        } else if duration <= 0.75 {
+            pace = "after a brief search"
+        } else {
+            pace = "late"
+        }
+
+        return "\(prefix) \(pace) (\(formattedSeconds(duration)) after the vowel)"
+    }
+
+    private static func peakText(label: String, score: Double?, time: TimeInterval?) -> String {
+        guard let score, let time else {
+            return "\(label) unavailable."
+        }
+
+        let formattedScore = score.formatted(.percent.precision(.fractionLength(0)))
+
+        return "\(label): \(formattedScore) at \(formattedSeconds(time))."
+    }
+
+    private static func delayText(summary: ChordTimingSummary) -> String {
+        guard summary.largestDelayContributor != .none else {
+            return ""
+        }
+
+        return " Main delay: \(summary.largestDelayContributor.title)."
+    }
+
+    private static func formattedSeconds(_ value: TimeInterval) -> String {
+        value.formatted(.number.precision(.fractionLength(2))) + "s"
     }
 }
 
