@@ -143,21 +143,18 @@ struct ContentView: View {
             )
 
             if let take = viewModel.currentTake {
-                TakeAnalysisSections(
+                TakeReviewDashboard(
                     take: take,
                     displayState: displayState(for: take),
                     frame: take.analysisFrame,
                     playback: viewModel.currentTakePlayback,
+                    canCompare: viewModel.canCompareCurrentTake,
                     liveInputFrame: viewModel.inputManager.latestFrame,
                     liveInputState: viewModel.inputManager.state,
                     isDebugExpanded: $isDebugExpanded,
                     isVisualEvidenceExpanded: $isVisualEvidenceExpanded,
                     onPlaybackToggle: viewModel.toggleCurrentTakePlayback,
-                    onPlaybackScrub: viewModel.scrubCurrentTakePlayback
-                )
-
-                TakeActionBar(
-                    canCompare: viewModel.canCompareCurrentTake,
+                    onPlaybackScrub: viewModel.scrubCurrentTakePlayback,
                     onSave: viewModel.saveCurrentTake,
                     onCompare: viewModel.compareCurrentTake,
                     onRecordAgain: viewModel.startPrimaryTakeRecording,
@@ -265,153 +262,6 @@ private struct RecordingStatusPanel: View {
                 Text(signal.message)
                     .foregroundStyle(.secondary)
             }
-        }
-    }
-}
-
-private struct TakeAnalysisSections: View {
-    let take: RecordedTake
-    let displayState: LiveAnalysisDisplayState
-    let frame: AnalysisFrame
-    let playback: TakePlaybackState
-    let liveInputFrame: AudioInputFrame?
-    let liveInputState: AudioInputState
-    @Binding var isDebugExpanded: Bool
-    @Binding var isVisualEvidenceExpanded: Bool
-    let onPlaybackToggle: () -> Void
-    let onPlaybackScrub: (Double) -> Void
-
-    var body: some View {
-        let takeState = TakeAnalysisDisplayState(take: take)
-        let chordAnalysis = ChordLabAnalyzer().analyze(frames: take.frames)
-        let phraseState = PhraseSegmentationDisplayState(regionStates: [takeState.confidenceState])
-
-        VStack(alignment: .leading, spacing: 16) {
-            TakeSummaryPanel(take: take, state: takeState)
-            CurrentTakePlaybackPanel(
-                playback: playback,
-                onToggle: onPlaybackToggle,
-                onScrub: onPlaybackScrub
-            )
-            CurrentQualityPanel(title: "Recorded Take Quality", metrics: displayState.metricStates)
-            ChordLabView(
-                title: "Timing / Chord Behavior",
-                analysis: chordAnalysis
-            )
-            PhrasePlaceholderPanel(state: phraseState)
-            SpectrumPanel(
-                title: "Advanced Details",
-                spectrum: frame.spectrum,
-                spectrogram: frame.spectrogram,
-                spectrumTitle: "Recorded Take Spectrum",
-                spectrogramTitle: "Recorded Take Spectrogram",
-                duration: take.duration,
-                isCompact: true,
-                isExpanded: $isVisualEvidenceExpanded
-            )
-            LiveInputMonitorPanel(frame: liveInputFrame, state: liveInputState)
-            ExperimentalDebugPanel(
-                isExpanded: $isDebugExpanded,
-                frame: frame,
-                inputFrame: liveInputFrame,
-                trend: frame.ringHistory,
-                meters: frame.meters
-            )
-        }
-    }
-}
-
-private struct TakeSummaryPanel: View {
-    let take: RecordedTake
-    let state: TakeAnalysisDisplayState
-
-    var body: some View {
-        RehearsalPanel(title: "Summary") {
-            VStack(alignment: .leading, spacing: 10) {
-                if let warning = state.warningMessage {
-                    Text(warning)
-                        .foregroundStyle(.orange)
-                }
-
-                Text(state.lockSummary)
-                    .font(.title3.weight(.semibold))
-
-                Grid(alignment: .leading, horizontalSpacing: 18, verticalSpacing: 8) {
-                    metricRow("Duration", formatSeconds(take.duration))
-                    metricRow("Frames", take.frames.count.formatted())
-                    metricRow("Confidence", formatPercent(take.summary.averageConfidence))
-                }
-                .font(.caption)
-            }
-        }
-    }
-
-    private func metricRow(_ label: String, _ value: String) -> some View {
-        GridRow {
-            Text(label)
-                .foregroundStyle(.secondary)
-
-            Text(value)
-                .monospacedDigit()
-        }
-    }
-}
-
-private struct PhrasePlaceholderPanel: View {
-    let state: PhraseSegmentationDisplayState
-
-    var body: some View {
-        RehearsalPanel(title: "Phrase") {
-            VStack(alignment: .leading, spacing: 8) {
-                if let warning = state.warningMessage {
-                    Text(warning)
-                        .foregroundStyle(.orange)
-                }
-
-                Text(state.summary)
-                    .foregroundStyle(.secondary)
-            }
-            .font(.caption)
-        }
-    }
-}
-
-private struct TakeActionBar: View {
-    let canCompare: Bool
-    let onSave: () -> Void
-    let onCompare: () -> Void
-    let onRecordAgain: () -> Void
-    let onDiscard: () -> Void
-
-    var body: some View {
-        RehearsalPanel(title: "Actions") {
-            HStack(spacing: 10) {
-                Button {
-                    onSave()
-                } label: {
-                    Label("Save Take", systemImage: "tray.and.arrow.down")
-                }
-
-                Button {
-                    onCompare()
-                } label: {
-                    Label("Compare", systemImage: "rectangle.split.2x1")
-                }
-                .disabled(!canCompare)
-
-                Button {
-                    onRecordAgain()
-                } label: {
-                    Label("Record Again", systemImage: "record.circle")
-                }
-
-                Button(role: .destructive) {
-                    onDiscard()
-                } label: {
-                    Label("Discard", systemImage: "trash")
-                }
-            }
-            .controlSize(.large)
         }
     }
 }
