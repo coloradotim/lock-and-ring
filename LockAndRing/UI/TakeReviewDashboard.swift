@@ -35,7 +35,7 @@ struct TakeReviewDashboard: View {
     var body: some View {
         let takeState = TakeAnalysisDisplayState(take: take)
         let chordAnalysis = ChordLabAnalyzer().analyze(frames: take.frames)
-        let phraseState = PhraseSegmentationDisplayState(regionStates: [takeState.confidenceState])
+        let phraseAnalysis = PhraseSegmenter().analyze(frames: take.frames)
         let reviewFrame = take.frame(at: playback.currentTime) ?? frame
         let reviewDuration = playback.duration > 0 ? playback.duration : take.duration
 
@@ -80,7 +80,7 @@ struct TakeReviewDashboard: View {
                 analysis: chordAnalysis
             )
 
-            PhrasePlaceholderPanel(state: phraseState)
+            PhraseSegmentationPanel(analysis: phraseAnalysis)
 
             SpectrumPanel(
                 title: "Advanced Details",
@@ -302,25 +302,6 @@ private struct TakeQualityTile: View {
         .overlay {
             RoundedRectangle(cornerRadius: 8)
                 .stroke(metric.isReliable ? .clear : .orange.opacity(0.35), lineWidth: 1)
-        }
-    }
-}
-
-private struct PhrasePlaceholderPanel: View {
-    let state: PhraseSegmentationDisplayState
-
-    var body: some View {
-        RehearsalPanel(title: "Phrase") {
-            VStack(alignment: .leading, spacing: 8) {
-                if let warning = state.warningMessage {
-                    Text(warning)
-                        .foregroundStyle(.orange)
-                }
-
-                Text(state.summary)
-                    .foregroundStyle(.secondary)
-            }
-            .font(.caption)
         }
     }
 }
