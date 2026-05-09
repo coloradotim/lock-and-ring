@@ -18,6 +18,8 @@ struct ContentView: View {
                 state: viewModel.inputManager.state
             )
 
+            OfflineAnalysisView(analyzer: viewModel.offlineAnalyzer)
+
             LiveMetersView(snapshot: viewModel.currentFrame.meters)
 
             RingExperimentView(
@@ -30,7 +32,7 @@ struct ContentView: View {
             SpectrogramView(spectrogram: viewModel.currentFrame.spectrogram)
         }
         .padding(28)
-        .frame(minWidth: 760, minHeight: 820)
+        .frame(minWidth: 760, minHeight: 920)
         .background(Color(nsColor: .windowBackgroundColor))
         .onAppear {
             viewModel.startAudio()

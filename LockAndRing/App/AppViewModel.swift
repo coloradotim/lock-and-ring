@@ -4,6 +4,7 @@ import Foundation
 @Observable
 final class AppViewModel {
     var inputManager: AudioInputManager
+    var offlineAnalyzer: OfflineAudioAnalyzer
     var currentFrame: AnalysisFrame
     private let spectrumAnalyzer: SpectrumAnalyzer
     private let roughnessScorer: RoughnessScorer
@@ -11,15 +12,26 @@ final class AppViewModel {
 
     init(
         inputManager: AudioInputManager? = nil,
+        offlineAnalyzer: OfflineAudioAnalyzer? = nil,
         currentFrame: AnalysisFrame = .placeholder
     ) {
         self.inputManager = inputManager ?? AudioInputManager()
+        self.offlineAnalyzer = offlineAnalyzer ?? OfflineAudioAnalyzer()
         self.currentFrame = currentFrame
         self.spectrumAnalyzer = SpectrumAnalyzer()
         self.roughnessScorer = RoughnessScorer()
         self.ringScorer = RingScorer()
         self.inputManager.onFrame = { [weak self] frame in
             self?.analyze(frame)
+        }
+        self.offlineAnalyzer.onFrame = { [weak self] frame in
+            self?.analyze(frame)
+        }
+        self.offlineAnalyzer.onPlaybackStarted = { [weak self] in
+            self?.stopAudio()
+        }
+        self.offlineAnalyzer.onPlaybackStopped = { [weak self] in
+            self?.startAudio()
         }
     }
 
