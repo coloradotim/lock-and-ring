@@ -52,3 +52,71 @@ struct MetricHelpDisclosure: View {
         }
     }
 }
+
+struct SpectrogramHelpDisclosure: View {
+    var body: some View {
+        DisclosureGroup("How to read this") {
+            VStack(alignment: .leading, spacing: 8) {
+                Text(VisualizationHelpCopy.howToRead)
+                helpRow(VisualizationHelpCopy.waveform)
+                helpRow(VisualizationHelpCopy.spectrogram)
+                helpRow(VisualizationHelpCopy.metrics)
+            }
+            .font(.caption)
+            .foregroundStyle(.secondary)
+            .padding(.top, 6)
+        }
+    }
+
+    private func helpRow(_ text: String) -> some View {
+        Label(text, systemImage: "info.circle")
+            .labelStyle(.titleAndIcon)
+    }
+}
+
+struct VisualizationLegend: View {
+    let entries: [VisualizationLegendEntry]
+
+    init(entries: [VisualizationLegendEntry] = VisualizationHelpCopy.legendEntries) {
+        self.entries = entries
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(alignment: .firstTextBaseline, spacing: 10) {
+                ForEach(entries) { entry in
+                    Label(entry.title, systemImage: "square.fill")
+                        .foregroundStyle(color(for: entry.kind))
+                }
+            }
+            .font(.caption2)
+
+            VStack(alignment: .leading, spacing: 4) {
+                ForEach(entries) { entry in
+                    Text("\(entry.title): \(entry.explanation)")
+                }
+            }
+            .font(.caption2)
+            .foregroundStyle(.secondary)
+        }
+    }
+
+    private func color(for kind: ChordTimelineSegmentKind) -> Color {
+        switch kind.paletteToken {
+        case .neutralGray:
+            .gray
+        case .orange:
+            .orange
+        case .amber:
+            .yellow
+        case .blue:
+            .blue
+        case .green:
+            .green
+        case .purple:
+            .purple
+        case .red:
+            .red
+        }
+    }
+}

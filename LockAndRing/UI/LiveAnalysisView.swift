@@ -316,9 +316,8 @@ struct SpectrumPanel: View {
     var body: some View {
         RehearsalPanel(title: title) {
             VStack(alignment: .leading, spacing: 14) {
-                Text(spectrumHelpText)
-                .font(.caption)
-                .foregroundStyle(.secondary)
+                SpectrogramHelpDisclosure()
+                VisualizationLegend()
 
                 if isCompact {
                     DisclosureGroup("Show experimental visual detail", isExpanded: $isExpanded) {
@@ -388,9 +387,6 @@ struct SpectrumPanel: View {
         time.formatted(.number.precision(.fractionLength(2))) + "s"
     }
 
-    private var spectrumHelpText: String {
-        "Spectrum shows where acoustic energy is concentrated. Stable peaks usually support clearer lock and ring."
-    }
 }
 
 struct ExperimentalDebugPanel: View {

@@ -108,7 +108,9 @@ struct MetricDisplayState: Identifiable, Equatable, Sendable {
         self.score = snapshot.score.value
         self.confidence = snapshot.confidence.value
         self.qualityLabel = Self.qualityLabel(for: snapshot)
-        self.isReliable = snapshot.confidence.value >= 0.55 && snapshot.signalQuality == .nominal
+        let thresholds = AnalysisConfiguration.default.confidence
+        self.isReliable = snapshot.confidence.value >= thresholds.reliableAnalysis
+            && snapshot.signalQuality == .nominal
     }
 
     private static func qualityLabel(for snapshot: MetricSnapshot) -> String {
@@ -258,7 +260,8 @@ struct MetricTrendItem: Identifiable, Equatable, Sendable {
         let recentConfidence = recent.map { $0.metric(for: kind).confidence.value }.average
         let previousConfidence = previous.map { $0.metric(for: kind).confidence.value }.average
 
-        guard min(recentConfidence, previousConfidence) >= 0.35 else {
+        let thresholds = AnalysisConfiguration.default.trend
+        guard min(recentConfidence, previousConfidence) >= thresholds.minimumConfidence else {
             self.init(kind: kind, direction: .notEnoughConfidence, delta: 0)
             return
         }
@@ -266,7 +269,7 @@ struct MetricTrendItem: Identifiable, Equatable, Sendable {
         let delta = recent.map { $0.metric(for: kind).score.value }.average
             - previous.map { $0.metric(for: kind).score.value }.average
 
-        if abs(delta) < 0.03 {
+        if abs(delta) < thresholds.meaningfulDelta {
             self.init(kind: kind, direction: .unchanged, delta: delta)
         } else {
             self.init(kind: kind, direction: delta > 0 ? .increased : .decreased, delta: delta)
@@ -328,7 +331,7 @@ struct BaselineComparisonItem: Identifiable, Equatable, Sendable {
     }
 
     var summaryText: String {
-        if abs(improvement) < 0.01 {
+        if abs(improvement) < AnalysisConfiguration.default.comparison.meaningfulDelta {
             return "\(kind.displayTitle) unchanged"
         }
 

@@ -3,7 +3,7 @@ import Foundation
 struct ChordLabAnalyzer {
     let thresholds: ChordLabThresholds
 
-    init(thresholds: ChordLabThresholds = ChordLabThresholds()) {
+    init(thresholds: ChordLabThresholds = AnalysisConfiguration.default.chordTiming) {
         self.thresholds = thresholds
     }
 
@@ -378,114 +378,6 @@ struct ChordTimelineSegment: Identifiable, Equatable, Sendable {
     }
 }
 
-enum ChordTimelineSegmentKind: String, Equatable, Sendable {
-    case silence
-    case consonantOrOnset
-    case searching
-    case stable
-    case locked
-    case ringing
-    case lowConfidence
-
-    var title: String {
-        switch self {
-        case .silence:
-            "Silence"
-        case .consonantOrOnset:
-            "Consonant / onset"
-        case .searching:
-            "Searching"
-        case .stable:
-            "Stable"
-        case .locked:
-            "Locked"
-        case .ringing:
-            "Ringing"
-        case .lowConfidence:
-            "Low confidence"
-        }
-    }
-
-    var paletteToken: ChordTimelinePaletteToken {
-        switch self {
-        case .silence:
-            .neutralGray
-        case .consonantOrOnset:
-            .orange
-        case .searching:
-            .amber
-        case .stable:
-            .blue
-        case .locked:
-            .green
-        case .ringing:
-            .purple
-        case .lowConfidence:
-            .red
-        }
-    }
-}
-
-enum ChordTimelinePaletteToken: Equatable, Hashable, Sendable {
-    case neutralGray
-    case orange
-    case amber
-    case blue
-    case green
-    case purple
-    case red
-}
-
-extension ChordTimelineSegmentKind {
-    static let legendOrder: [ChordTimelineSegmentKind] = [
-        .silence,
-        .consonantOrOnset,
-        .searching,
-        .stable,
-        .locked,
-        .ringing,
-        .lowConfidence
-    ]
-}
-
-struct ChordEventMarker: Identifiable, Equatable, Sendable {
-    let id: UUID
-    let kind: ChordEventMarkerKind
-    let time: TimeInterval
-
-    init(id: UUID = UUID(), kind: ChordEventMarkerKind, time: TimeInterval) {
-        self.id = id
-        self.kind = kind
-        self.time = time
-    }
-}
-
-enum ChordEventMarkerKind: String, Equatable, Sendable {
-    case soundOnset
-    case analyzableVowelStart
-    case lockAchieved
-    case ringAchieved
-    case bestLock
-    case bestRing
-
-    var title: String {
-        switch self {
-        case .soundOnset:
-            "Sound onset"
-        case .analyzableVowelStart:
-            "Vowel start"
-        case .lockAchieved:
-            "Lock"
-        case .ringAchieved:
-            "Ring"
-        case .bestLock:
-            "Best locked vowel"
-        case .bestRing:
-            "Best ringing vowel"
-        }
-    }
-}
-
 struct ChordLabMetricPeak: Equatable, Sendable {
     let kind: MetricKind
     let score: Double
@@ -512,42 +404,5 @@ enum ChordDelayContributor: Equatable, Sendable {
         case .none:
             "none detected"
         }
-    }
-}
-
-struct ChordLabThresholds: Equatable, Sendable {
-    let soundOnsetConfidence: Double
-    let analyzableConfidence: Double
-    let minimumMetricConfidence: Double
-    let minimumSustainedDuration: TimeInterval
-    let stabilityScore: Double
-    let minimumStabilityForLock: Double
-    let lockScore: Double
-    let ringScore: Double
-    let maximumRoughnessForLock: Double
-    let maximumRoughnessForRing: Double
-
-    init(
-        soundOnsetConfidence: Double = 0.15,
-        analyzableConfidence: Double = 0.35,
-        minimumMetricConfidence: Double = 0.45,
-        minimumSustainedDuration: TimeInterval = 0.15,
-        stabilityScore: Double = 0.5,
-        minimumStabilityForLock: Double = 0.4,
-        lockScore: Double = 0.65,
-        ringScore: Double = 0.45,
-        maximumRoughnessForLock: Double = 0.65,
-        maximumRoughnessForRing: Double = 0.7
-    ) {
-        self.soundOnsetConfidence = soundOnsetConfidence
-        self.analyzableConfidence = analyzableConfidence
-        self.minimumMetricConfidence = minimumMetricConfidence
-        self.minimumSustainedDuration = minimumSustainedDuration
-        self.stabilityScore = stabilityScore
-        self.minimumStabilityForLock = minimumStabilityForLock
-        self.lockScore = lockScore
-        self.ringScore = ringScore
-        self.maximumRoughnessForLock = maximumRoughnessForLock
-        self.maximumRoughnessForRing = maximumRoughnessForRing
     }
 }

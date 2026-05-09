@@ -36,6 +36,7 @@ struct ChordLabView: View {
                 }
                 ChordLabSummaryGrid(summary: analysis.summary)
                 ChordTimelineView(analysis: analysis)
+                VisualizationLegend(entries: visibleLegendEntries(for: analysis))
                 ChordLabMarkerList(markers: analysis.eventMarkers)
             }
         } else {
@@ -43,6 +44,11 @@ struct ChordLabView: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
+    }
+
+    private func visibleLegendEntries(for analysis: ChordLabAnalysis) -> [VisualizationLegendEntry] {
+        let visibleKinds = Set(analysis.timelineSegments.map(\.kind))
+        return VisualizationHelpCopy.legendEntries.filter { visibleKinds.contains($0.kind) }
     }
 }
 
@@ -105,13 +111,9 @@ private struct ChordTimelineView: View {
             .frame(height: 38)
             .background(.black.opacity(0.5), in: RoundedRectangle(cornerRadius: 6))
 
-            HStack(spacing: 10) {
-                ForEach(ChordTimelineSegmentKind.legendOrder, id: \.self) { kind in
-                    Label(kind.title, systemImage: "square.fill")
-                        .foregroundStyle(color(for: kind))
-                }
-            }
-            .font(.caption2)
+            Text("Colored regions are app interpretation, not raw spectrogram data.")
+                .font(.caption2)
+                .foregroundStyle(.secondary)
         }
     }
 
@@ -176,9 +178,20 @@ private struct ChordLabMarkerList: View {
     let markers: [ChordEventMarker]
 
     var body: some View {
-        HStack(spacing: 12) {
-            ForEach(markers) { marker in
-                Text("\(marker.kind.title): \(marker.time.formatted(.number.precision(.fractionLength(2))))s")
+        let labels = [TimelineMarkerLabel](markers: markers)
+
+        VStack(alignment: .leading, spacing: 6) {
+            Text("Markers")
+                .font(.caption.weight(.semibold))
+
+            if labels.isEmpty {
+                Text("No reliable marker times were available for this take.")
+            } else {
+                HStack(spacing: 12) {
+                    ForEach(labels) { label in
+                        Text("\(label.title): \(label.timeText)")
+                    }
+                }
             }
         }
         .font(.caption2)

@@ -35,6 +35,33 @@ whole take at any time.
 Listening should sit beside metrics: users can play the whole take, play a
 selected region, or loop a selected region while deciding what to try next.
 
+## Reading The Visual Evidence
+
+Take Analysis shows visual evidence as support for the app's interpretation, not
+as a raw-audio test the singer has to decode alone.
+
+- Waveform evidence is best for timing: sound onset, consonants, breaths,
+  attacks, and other volume/transient changes.
+- Spectrogram evidence is best for harmonic structure: upper partials,
+  stability, ring, roughness, and noise.
+- Metric curves and colored overlays are the interpretation layer. They are more
+  important than raw color intensity because the app combines confidence,
+  stability, roughness, lock, and ring evidence before making a claim.
+
+The timeline legend uses these meanings:
+
+- Consonant / onset: transient sound before the target vowel is analyzable.
+- Searching: sung sound is present, but stable lock has not been detected.
+- Stable: the sound is steadier, but not yet over the lock threshold.
+- Locked: harmonic alignment stayed above threshold while roughness remained low.
+- Ringing: upper harmonic energy increased while roughness remained low.
+- Low confidence: signal quality is too weak, clipped, noisy, unstable, or
+  otherwise unreliable for a strong musical claim.
+
+Markers such as sound onset, vowel start, lock, ring, best lock, and best ring
+are shown only when the analysis can identify them. Missing markers should be
+read as "not enough evidence for that moment," not as a hidden failure.
+
 ## Future take-analysis shape
 
 The `RecordedTake` model keeps the slot, label, timestamps, and immutable frames

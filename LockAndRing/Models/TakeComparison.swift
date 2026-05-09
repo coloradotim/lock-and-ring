@@ -189,7 +189,10 @@ struct TakeSummary: Equatable, Sendable {
     let averageConfidence: Double
     let stabilityDuration: TimeInterval
 
-    init(take: RecordedTake, stableThreshold: Double = 0.65) {
+    init(
+        take: RecordedTake,
+        thresholds: ComparisonThresholds = AnalysisConfiguration.default.comparison
+    ) {
         self.slot = take.slot
         self.name = take.name
         self.frameCount = take.frames.count
@@ -202,7 +205,7 @@ struct TakeSummary: Equatable, Sendable {
         self.stabilityDuration = Self.stabilityDuration(
             frames: take.frames,
             duration: take.duration,
-            stableThreshold: stableThreshold
+            stableThreshold: thresholds.stableFrameScore
         )
     }
 
@@ -296,7 +299,8 @@ struct TakeComparisonSummary: Equatable, Sendable {
     }
 
     var confidenceWarning: String? {
-        if min(takeA.averageConfidence, takeB.averageConfidence) < 0.55 {
+        if min(takeA.averageConfidence, takeB.averageConfidence)
+            < AnalysisConfiguration.default.comparison.reliableTakeConfidence {
             return "Comparison may be unreliable because one take had low signal confidence."
         }
 
@@ -325,11 +329,11 @@ struct MetricComparison: Equatable, Sendable {
     }
 
     var isImproved: Bool {
-        improvement > 0.01
+        improvement > AnalysisConfiguration.default.comparison.meaningfulDelta
     }
 
     var isRegressed: Bool {
-        improvement < -0.01
+        improvement < -AnalysisConfiguration.default.comparison.meaningfulDelta
     }
 
     var directionText: String {
