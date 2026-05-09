@@ -135,10 +135,10 @@ private struct ChordTimelineView: View {
         }
 
         for marker in analysis.eventMarkers {
-            let x = size.width * marker.time / duration
+            let xPosition = size.width * marker.time / duration
             let path = Path { path in
-                path.move(to: CGPoint(x: x, y: 0))
-                path.addLine(to: CGPoint(x: x, y: size.height))
+                path.move(to: CGPoint(x: xPosition, y: 0))
+                path.addLine(to: CGPoint(x: xPosition, y: size.height))
             }
             context.stroke(path, with: .color(.white.opacity(0.88)), lineWidth: 1)
         }

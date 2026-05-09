@@ -13,7 +13,8 @@ final class AnalysisConfidenceDisplayTests: XCTestCase {
     }
 
     func testClippedInputProducesReliabilityWarning() {
-        let display = AnalysisConfidenceDisplayState(state: AnalysisConfidenceState(meters: meters(signalQuality: .clipping)))
+        let state = AnalysisConfidenceState(meters: meters(signalQuality: .clipping))
+        let display = AnalysisConfidenceDisplayState(state: state)
 
         XCTAssertEqual(display.title, "Input clipping")
         XCTAssertTrue(display.message.contains("the input clipped"))
@@ -129,8 +130,18 @@ final class AnalysisConfidenceDisplayTests: XCTestCase {
         MeterSnapshot(
             lock: snapshot(kind: .lock, score: lock, confidence: confidence, signalQuality: signalQuality),
             ring: snapshot(kind: .ring, score: ring, confidence: confidence, signalQuality: signalQuality),
-            roughness: snapshot(kind: .roughness, score: roughness, confidence: confidence, signalQuality: signalQuality),
-            stability: snapshot(kind: .stability, score: stability, confidence: confidence, signalQuality: signalQuality)
+            roughness: snapshot(
+                kind: .roughness,
+                score: roughness,
+                confidence: confidence,
+                signalQuality: signalQuality
+            ),
+            stability: snapshot(
+                kind: .stability,
+                score: stability,
+                confidence: confidence,
+                signalQuality: signalQuality
+            )
         )
     }
 
