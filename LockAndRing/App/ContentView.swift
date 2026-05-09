@@ -21,6 +21,17 @@ struct ContentView: View {
 
                 OfflineAnalysisView(analyzer: viewModel.offlineAnalyzer)
 
+                LiveAnalysisView(
+                    state: LiveAnalysisDisplayState(
+                        meters: viewModel.currentFrame.meters,
+                        history: viewModel.meterHistory,
+                        baseline: viewModel.takeRecorder.take(for: .takeA)?.summary
+                    ),
+                    spectrum: viewModel.currentFrame.spectrum,
+                    spectrogram: viewModel.currentFrame.spectrogram,
+                    ringTrend: viewModel.currentFrame.ringHistory
+                )
+
                 TakeComparisonView(
                     recorder: viewModel.takeRecorder,
                     onRecord: viewModel.startTakeRecording,
@@ -28,17 +39,6 @@ struct ContentView: View {
                     onPlay: viewModel.playTake,
                     onClear: viewModel.clearTake
                 )
-
-                LiveMetersView(snapshot: viewModel.currentFrame.meters)
-
-                RingExperimentView(
-                    trend: viewModel.currentFrame.ringHistory,
-                    meters: viewModel.currentFrame.meters
-                )
-
-                SpectrumView(spectrum: viewModel.currentFrame.spectrum)
-
-                SpectrogramView(spectrogram: viewModel.currentFrame.spectrogram)
             }
             .padding(28)
             .frame(maxWidth: .infinity, alignment: .leading)
