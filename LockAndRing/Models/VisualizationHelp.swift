@@ -36,7 +36,11 @@ enum VisualizationHelpCopy {
         ChordTimelineSegmentKind.legendOrder.map(VisualizationLegendEntry.init(kind:))
 
     static let howToRead = """
-    The waveform shows timing, consonants, breaths, and transients. The spectrogram shows where sound energy lives over time. Upper bands can indicate stronger upper harmonics, but the app only treats this as ring when those harmonics are organized and roughness stays low. Colored regions show what the app detected, so you do not have to read the raw spectrogram yourself.
+    The waveform shows timing, consonants, breaths, and transients.
+    The spectrogram shows where sound energy lives over time.
+    Upper bands can indicate stronger upper harmonics, but the app only treats this as ring \
+    when those harmonics are organized and roughness stays low.
+    Colored regions show what the app detected, so you do not have to read the raw spectrogram yourself.
     """
 
     static let waveform = "Waveform = timing, onset, consonants, breath, and volume/transients."

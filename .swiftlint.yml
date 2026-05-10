@@ -5,6 +5,8 @@ included:
 excluded:
   - .build
 
+cache_path: .build/swiftlint-cache
+
 disabled_rules:
   - trailing_comma
 

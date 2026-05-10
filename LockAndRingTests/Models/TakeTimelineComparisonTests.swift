@@ -3,8 +3,8 @@ import XCTest
 
 final class TakeTimelineComparisonTests: XCTestCase {
     func testAlignsByDetectedOnset() {
-        let reference = take(start: 10, onsetOffset: 0.2, lockOffset: 0.5, ringOffset: 0.7)
-        let current = take(start: 20, onsetOffset: 0.4, lockOffset: 0.6, ringOffset: 0.8)
+        let reference = take(.init(start: 10, onsetOffset: 0.2, lockOffset: 0.5, ringOffset: 0.7))
+        let current = take(.init(start: 20, onsetOffset: 0.4, lockOffset: 0.6, ringOffset: 0.8))
         let comparison = TakeTimelineComparison(reference: reference, current: current)
 
         XCTAssertEqual(comparison.alignment.referenceOffset, 0.2, accuracy: 0.001)
@@ -16,8 +16,8 @@ final class TakeTimelineComparisonTests: XCTestCase {
     }
 
     func testFallsBackWhenOnsetIsUnavailable() {
-        let reference = take(start: 10, onsetOffset: nil, lockOffset: nil, ringOffset: nil)
-        let current = take(start: 20, onsetOffset: 0.2, lockOffset: nil, ringOffset: nil)
+        let reference = take(.init(start: 10, onsetOffset: nil, lockOffset: nil, ringOffset: nil))
+        let current = take(.init(start: 20, onsetOffset: 0.2, lockOffset: nil, ringOffset: nil))
         let comparison = TakeTimelineComparison(reference: reference, current: current)
 
         XCTAssertEqual(comparison.alignment.referenceOffset, 0)
@@ -29,8 +29,8 @@ final class TakeTimelineComparisonTests: XCTestCase {
     }
 
     func testSummaryReportsFasterLockAndMixedRingRatio() {
-        let reference = take(start: 10, onsetOffset: 0.1, lockOffset: 0.7, ringOffset: 0.8)
-        let current = take(start: 20, onsetOffset: 0.1, lockOffset: 0.4, ringOffset: nil)
+        let reference = take(.init(start: 10, onsetOffset: 0.1, lockOffset: 0.7, ringOffset: 0.8))
+        let current = take(.init(start: 20, onsetOffset: 0.1, lockOffset: 0.4, ringOffset: nil))
         let comparison = TakeTimelineComparison(reference: reference, current: current)
 
         XCTAssertTrue(comparison.summaryLines.contains { $0.contains("lock") && $0.contains("faster") })
@@ -38,8 +38,8 @@ final class TakeTimelineComparisonTests: XCTestCase {
     }
 
     func testLowConfidenceWarningPropagates() {
-        let reference = take(start: 10, onsetOffset: 0.1, lockOffset: nil, ringOffset: nil)
-        let current = take(start: 20, onsetOffset: 0.1, lockOffset: nil, ringOffset: nil, confidence: 0.2)
+        let reference = take(.init(start: 10, onsetOffset: 0.1, lockOffset: nil, ringOffset: nil))
+        let current = take(.init(start: 20, onsetOffset: 0.1, lockOffset: nil, ringOffset: nil, confidence: 0.2))
         let comparison = TakeTimelineComparison(reference: reference, current: current)
 
         XCTAssertEqual(
@@ -48,22 +48,13 @@ final class TakeTimelineComparisonTests: XCTestCase {
         )
     }
 
-    private func take(
-        start: TimeInterval,
-        onsetOffset: TimeInterval?,
-        lockOffset: TimeInterval?,
-        ringOffset: TimeInterval?,
-        confidence: Double = 0.8
-    ) -> RecordedTake {
-        let startedAt = Date(timeIntervalSince1970: start)
+    private func take(_ fixture: TakeFixture) -> RecordedTake {
+        let startedAt = Date(timeIntervalSince1970: fixture.start)
         let frames = stride(from: 0.0, through: 0.9, by: 0.1).map { offset in
             frame(
                 date: startedAt.addingTimeInterval(offset),
                 offset: offset,
-                onsetOffset: onsetOffset,
-                lockOffset: lockOffset,
-                ringOffset: ringOffset,
-                confidence: confidence
+                fixture: fixture
             )
         }
 
@@ -79,24 +70,41 @@ final class TakeTimelineComparisonTests: XCTestCase {
     private func frame(
         date: Date,
         offset: TimeInterval,
-        onsetOffset: TimeInterval?,
-        lockOffset: TimeInterval?,
-        ringOffset: TimeInterval?,
-        confidence: Double
+        fixture: TakeFixture
     ) -> AnalysisFrame {
-        let hasSignal = onsetOffset.map { offset >= $0 } ?? false
-        let locked = lockOffset.map { offset >= $0 } ?? false
-        let ringing = ringOffset.map { offset >= $0 } ?? false
-        let frameConfidence = hasSignal ? confidence : 0.05
+        let hasSignal = fixture.onsetOffset.map { offset >= $0 } ?? false
+        let locked = fixture.lockOffset.map { offset >= $0 } ?? false
+        let ringing = fixture.ringOffset.map { offset >= $0 } ?? false
+        let frameConfidence = hasSignal ? fixture.confidence : 0.05
         let signalQuality: SignalQualityState = frameConfidence >= 0.35 ? .nominal : .lowSignal
 
         return AnalysisFrame(
             timestamp: date,
             meters: MeterSnapshot(
-                lock: snapshot(kind: .lock, score: locked ? 0.8 : 0.2, confidence: frameConfidence, signalQuality: signalQuality),
-                ring: snapshot(kind: .ring, score: ringing ? 0.6 : 0.1, confidence: frameConfidence, signalQuality: signalQuality),
-                roughness: snapshot(kind: .roughness, score: 0.2, confidence: frameConfidence, signalQuality: signalQuality),
-                stability: snapshot(kind: .stability, score: hasSignal ? 0.8 : 0.1, confidence: frameConfidence, signalQuality: signalQuality)
+                lock: snapshot(
+                    kind: .lock,
+                    score: locked ? 0.8 : 0.2,
+                    confidence: frameConfidence,
+                    signalQuality: signalQuality
+                ),
+                ring: snapshot(
+                    kind: .ring,
+                    score: ringing ? 0.6 : 0.1,
+                    confidence: frameConfidence,
+                    signalQuality: signalQuality
+                ),
+                roughness: snapshot(
+                    kind: .roughness,
+                    score: 0.2,
+                    confidence: frameConfidence,
+                    signalQuality: signalQuality
+                ),
+                stability: snapshot(
+                    kind: .stability,
+                    score: hasSignal ? 0.8 : 0.1,
+                    confidence: frameConfidence,
+                    signalQuality: signalQuality
+                )
             ),
             spectrum: .placeholder,
             spectrogram: .placeholder,
@@ -116,5 +124,27 @@ final class TakeTimelineComparisonTests: XCTestCase {
             confidence: MetricConfidence(value: confidence, reason: "fixture"),
             signalQuality: signalQuality
         )
+    }
+
+    private struct TakeFixture {
+        let start: TimeInterval
+        let onsetOffset: TimeInterval?
+        let lockOffset: TimeInterval?
+        let ringOffset: TimeInterval?
+        let confidence: Double
+
+        init(
+            start: TimeInterval,
+            onsetOffset: TimeInterval?,
+            lockOffset: TimeInterval?,
+            ringOffset: TimeInterval?,
+            confidence: Double = 0.8
+        ) {
+            self.start = start
+            self.onsetOffset = onsetOffset
+            self.lockOffset = lockOffset
+            self.ringOffset = ringOffset
+            self.confidence = confidence
+        }
     }
 }

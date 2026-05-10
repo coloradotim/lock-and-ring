@@ -129,7 +129,11 @@ Avoid overclaiming:
 - Create GitHub issues for meaningful units of work.
 - Implement through branches and pull requests.
 - Keep PRs reviewable.
-- Before merging, run available tests and document manual test notes.
+- Before opening a PR, run `swift build`, `swift test`, and `scripts/lint.sh`.
+- Use `scripts/lint.sh` for lint verification. If SwiftLint is installed, it runs
+  `swiftlint lint --strict`; otherwise it still runs fallback whitespace, line-length,
+  and AppViewModel size checks. Do not skip lint just because SwiftLint is unavailable.
+- Before merging, document manual test notes.
 - If a change affects app behavior, include a short “How I tested this” section in the PR.
 - When a PR changes user-visible behavior, scoring semantics, metric labels, workflow layout,
   signal-quality behavior, or analysis output, update the relevant user-facing or technical
