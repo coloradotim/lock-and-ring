@@ -243,7 +243,12 @@ swift test
 ## Lint
 
 ```sh
-swiftlint lint --strict
+scripts/lint.sh
 ```
+
+When SwiftLint is installed, `scripts/lint.sh` runs `swiftlint lint --strict`.
+Without SwiftLint, it still runs fallback checks for whitespace, long Swift
+lines, and oversized `AppViewModel` growth so local verification catches common
+CI failures earlier.
 
 GitHub Actions runs build, tests, and SwiftLint on pull requests.
