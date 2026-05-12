@@ -18,3 +18,4 @@ beyond the issue or pull request where they were made.
 - [ADR-0002: macOS Native Swift App](0002-macos-native-swift-app.md)
 - [ADR-0003: Shared Live and Offline Analysis Pipeline](0003-shared-live-offline-analysis-pipeline.md)
 - [ADR-0004: Confidence-Aware Scoring](0004-confidence-aware-scoring.md)
+- [ADR-0005: Take, Reference, Keeper, and Region Workflow](0005-take-reference-keeper-workflow.md)
