@@ -1,56 +1,91 @@
 # Lock & Ring
 
-Lock & Ring is a macOS-native take-based rehearsal analysis tool for barbershop quartets and vocal ensembles.
+Lock & Ring helps serious vocal harmony ensembles compare rehearsal takes and hear what changed.
 
-The app helps singers record or import a take, review ensemble-level analysis, and decide whether to save, compare,
-try again, or discard the take. A take may come from the live microphone or from an imported recording; after it exists,
-the user-facing workflow should converge on **Take Analysis**.
+Short phrase:
 
-Take Analysis uses a single microphone or imported mono/stereo audio to measure:
+> Better takes. Clearer ears.
 
-- Harmonic lock
-- Dissonance / roughness
-- Overtone reinforcement (“ring”)
-- Chord stability over time
+Lock & Ring is a macOS-native rehearsal analysis tool for barbershop quartets and vocal ensembles. It helps singers record or import short takes, inspect ensemble-level evidence, compare the current take against a reference, keep the best-so-far region, and export useful audio for practice outside rehearsal.
+
+## Product Direction
+
+Lock & Ring is not a tuner, a fake coach, or a generic spectrum analyzer. It is a take-based rehearsal tool.
+
+The core product loop is:
+
+```text
+Record/import take → inspect → compare → adjust region → listen A/B → mark keeper or record again
+```
+
+The project starts with single-microphone ensemble analysis, honest confidence labeling, current-take analysis, selected-region analysis, and relative comparison against a reference take. Over time, it can support stronger automatic alignment, richer saved-take organization, deeper validation, and better export workflows for reference-track building.
+
+## Product Principles
+
+- The product is organized around takes, not rehearsal modes.
+- The first take in a run should automatically become the initial reference.
+- The current take should be analyzed on its own before comparison.
+- Comparison should default to the active reference or keeper, not necessarily the immediately previous take.
+- Users must be able to compare against the keeper, previous take, any saved take, or an imported file.
+- Whole-take analysis and selected-region analysis both matter.
+- The app should auto-detect the sung region and help align comparable regions across takes, but users must be able to adjust regions by ear.
+- Keeper means best-so-far for the current song/section/region and replaces the previous keeper.
+- Notes are optional free text and should never slow down live rehearsal.
+- Export should prioritize practical shareable audio, such as MP3-style clips, while retaining whatever internal audio is needed for future comparison.
+- The app should not produce a single overall take score.
+- The app should not diagnose individual singers from one microphone.
 
 ## Vision
 
 The goal is not to create an academic spectrum analyzer.
 
-The goal is to help singers answer questions like:
+The goal is to help serious singers answer questions like:
 
-- “Did that chord lock better?”
-- “Did the ring increase after we tuned that interval?”
-- “Are we stable or drifting?”
-- “Did that vowel alignment reduce roughness?”
-- “Should we save this take, compare it, try again, or discard it?”
+- “What changed in that take?”
+- “Did the sound lock sooner?”
+- “Did roughness decrease?”
+- “Did ring arrive sooner, get stronger, or last longer?”
+- “Did the target vowel stabilize more quickly?”
+- “Did the release timing change?”
+- “Is this the best-so-far region we should keep?”
+- “Can we export this clip to sing against later?”
 
-The first versions intentionally avoid trying to perfectly identify each singer independently.
+The first versions intentionally avoid trying to identify each singer independently.
 
-Instead, the app analyzes the combined waveform and evaluates the overall harmonic organization of the sound.
+Instead, the app analyzes the combined waveform and evaluates ensemble-level harmonic organization, roughness, ring, stability, timing, and confidence.
 
-## MVP goals
+## MVP Goals
 
 ### Initial release target
 
 A macOS app that:
 
-- Records or imports short rehearsal takes.
+- Records or imports short rehearsal takes, usually phrase-length material around 15-45 seconds.
 - Opens on a Ready screen with Record Take and Import Take as the primary actions.
 - Shows Take Analysis after a take exists.
-- Lets singers save, compare, try again, or discard.
+- Automatically uses the first take as the initial reference.
+- Shows current-take analysis before comparison.
+- Lets singers compare the current take to the active reference/keeper, previous take, any saved take, or an imported file.
+- Lets singers adjust one active selected region at a time and explicitly update/analyze that region.
+- Reports both whole-take and selected-region metrics.
+- Supports waveform-based region selection with the current and reference waveforms stacked for alignment.
+- Provides playback for current, reference, selected region, and A/B comparison.
+- Lets singers mark a best-so-far keeper, replacing the previous keeper for that song/section/region.
+- Prompts for optional title/section/note when marking a keeper, without requiring metadata before rehearsal continues.
 - Saves takes locally with replayable audio and basic analysis metadata.
-- Captures live microphone audio.
+- Exports selected keeper-region audio for sharing or assembling outside the app in tools such as Audacity or GarageBand.
 - Runs low-latency FFT/spectral analysis.
-- Displays take-level metrics for:
+- Displays take-level and selected-region metrics for:
   - Lock
   - Ring
   - Roughness
   - Stability
+  - Time to lock
+  - Time to ring
+  - Ring duration
 - Shows signal confidence and visual evidence.
-- Compares takes when the singer chooses a comparison.
 
-## Technical direction
+## Technical Direction
 
 ### Platform
 
@@ -75,6 +110,8 @@ Potential approaches include:
 - Harmonic entropy / organization metrics
 - Overtone reinforcement estimation
 - Temporal stability scoring
+- Region detection and alignment
+- Take-to-take comparison
 
 ## Non-goals for MVP
 
@@ -86,6 +123,9 @@ These may happen later, but should not block early progress:
 - Chord recognition for arbitrary music
 - AI coaching or singer diagnosis
 - Multi-platform support
+- Full DAW-style audio editing
+- In-app assembly of stitched reference tracks
+- Forced song/session database management before recording
 
 ## Development philosophy
 
@@ -128,6 +168,9 @@ LockAndRingTests/
 6. Ring scoring
 7. Stability scoring
 8. Take Analysis workflow refinement
+9. Region selection and explicit region analysis
+10. Reference/keeper comparison
+11. Export selected keeper-region audio
 
 ## Inspiration
 
@@ -140,7 +183,7 @@ Barbershop harmony values:
 - Chord stability
 - “Expanded sound” beyond the individual voices
 
-This project attempts to measure some of those qualities in real time without destroying the musical experience.
+This project attempts to measure some of those qualities without destroying the musical rehearsal experience.
 
 ## Status
 
@@ -252,3 +295,7 @@ lines, and oversized `AppViewModel` growth so local verification catches common
 CI failures earlier.
 
 GitHub Actions runs build, tests, and SwiftLint on pull requests.
+
+## Durable Rule
+
+> Audio capture creates takes. Analysis explains evidence. Regions focus attention. Comparison explains change. Confidence limits claims. Singers make the musical decision.
