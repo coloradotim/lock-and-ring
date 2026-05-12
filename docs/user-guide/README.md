@@ -15,6 +15,7 @@ Start here:
 - [Getting Started](getting-started.md)
 - [Recording a Take](live-rehearsal.md)
 - [Take Analysis and Comparison](take-1-take-2.md)
+- [Keepers and Export](keepers-and-export.md)
 - [Importing a Take](analyze-file.md)
 - [Metrics](metrics.md)
 - [Signal Quality](signal-quality.md)
